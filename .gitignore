@@ -5,3 +5,5 @@ backend/dist
 node_modules
 .env
 dist
+backend/reports
+backend/scripts
