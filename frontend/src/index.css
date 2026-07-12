@@ -1,9 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Quicksand:wght@300..700&display=swap');
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 @theme {
   --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
   --font-mono: 'Geist Mono', monospace;
+ --font-bebas: 'Bebas Neue', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+  --font-jakarta: 'Plus Jakarta Sans', sans-serif;
+  --font-quicksand: 'Quicksand', sans-serif;
 }
 
 html, body, #root {
@@ -14,6 +19,7 @@ html, body, #root {
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
   user-select: none;
+  background-color: var(--bg-base) !important; 
 }
 
 input, textarea, select {
@@ -38,26 +44,25 @@ input, textarea, select {
 }
 
 .dark {
-  --bg-base: #050409;
-  --bg-surface: #0E0C17;
-  --bg-surface-hover: #191629;
-  --text-main: #FFFFFF;
-  --text-muted: #A78BFA;
+  --bg-base: #0B0914;
+  --bg-surface: #151226;
+  --bg-surface-hover: #221D3D;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
   --text-inverse: #FFFFFF;
-  --brand-primary: #674CC4;
-  --brand-hover: #8B73E7;
-  --status-success: #00F576;
-  --status-warning: #FFB800;
-  --status-danger: #FF3B3B;
-  --border-light: #201B35;
-  --border-focus: #8B73E7;
+  --brand-primary: #8165E0;
+  --brand-hover: #9B84F0;
+  --status-success: #22C55E;
+  --status-warning: #F59E0B;
+  --status-danger: #EF4444;
+  --border-light: #2D264B;
+  --border-focus: #8165E0;
 }
 
 body {
   background: var(--bg-base);
   color: var(--text-main);
   font-family: var(--font-sans);
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 ::selection {
@@ -107,4 +112,40 @@ body {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* =========================================
+   VIEW TRANSITIONS & ANTI-FLASH FIXES
+   ========================================= */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-image-pair(root) {
+  isolation: auto;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+.dark::view-transition-old(root) {
+  z-index: 2;
+}
+.dark::view-transition-new(root) {
+  z-index: 1;
+}
+
+::view-transition {
+  background-color: var(--bg-base);
+}
+
+::view-transition-group(root) {
+  background-color: var(--bg-base);
 }
