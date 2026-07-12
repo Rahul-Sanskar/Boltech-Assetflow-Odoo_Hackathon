@@ -1,19 +1,47 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, Building2, Users, ClipboardList, Wrench, Settings } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Package,
+  Building2,
+  Users,
+  ClipboardList,
+  Wrench,
+  Settings,
+  Tags,
+  ArrowLeftRight,
+  Calendar,
+  FileBarChart,
+  Bell,
+  UserCog,
+  ClipboardCheck,
+  Activity,
+} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
   { to: '/admin/home', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/assets', label: 'Assets', icon: Package },
+  { to: '/admin/categories', label: 'Categories', icon: Tags },
   { to: '/admin/departments', label: 'Departments', icon: Building2 },
   { to: '/admin/employees', label: 'Employees', icon: Users },
   { to: '/admin/allocations', label: 'Allocations', icon: ClipboardList },
+  { to: '/admin/transfers', label: 'Transfers', icon: ArrowLeftRight },
+  { to: '/admin/bookings', label: 'Bookings', icon: Calendar },
   { to: '/admin/maintenance', label: 'Maintenance', icon: Wrench },
+  { to: '/admin/audits', label: 'Audits', icon: ClipboardCheck },
+  { to: '/admin/reports', label: 'Reports', icon: FileBarChart },
+  { to: '/admin/notifications', label: 'Notifications', icon: Bell },
+  { to: '/admin/users', label: 'Users', icon: UserCog },
+  { to: '/admin/activity', label: 'Activity', icon: Activity },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 const AdminSidebar = ({ isMobileOpen, isDesktopCollapsed, closeMobile }) => {
   const location = useLocation();
-  const isActive = (path) => location.pathname === path;
+  const { user } = useAuth();
+  const isActive = (path) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const initials = (user?.name || 'A').charAt(0).toUpperCase();
 
   return (
     <>
@@ -72,11 +100,11 @@ const AdminSidebar = ({ isMobileOpen, isDesktopCollapsed, closeMobile }) => {
         <div className="p-3 border-t border-[var(--border-light)]">
           <div className={`flex items-center gap-3 px-3 py-2 rounded-xl bg-[var(--bg-surface-hover)] transition-all duration-300 ${isDesktopCollapsed && !isMobileOpen ? 'justify-center' : ''}`}>
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--brand-primary)] to-purple-400 flex items-center justify-center shrink-0">
-              <span className="text-white text-xs font-bold">A</span>
+              <span className="text-white text-xs font-bold">{initials}</span>
             </div>
             <div className={`transition-all duration-300 overflow-hidden ${isDesktopCollapsed && !isMobileOpen ? 'w-0 opacity-0' : 'opacity-100'}`}>
-              <p className="text-xs font-semibold text-[var(--text-main)] truncate">Admin</p>
-              <p className="text-[10px] text-[var(--text-muted)]">Administrator</p>
+              <p className="text-xs font-semibold text-[var(--text-main)] truncate">{user?.name || 'Admin'}</p>
+              <p className="text-[10px] text-[var(--text-muted)] capitalize">{user?.role || 'administrator'}</p>
             </div>
           </div>
         </div>

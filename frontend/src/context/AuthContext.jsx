@@ -9,9 +9,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const savedUser = localStorage.getItem('user');
       if (savedUser && savedUser !== 'undefined') {
-        return JSON.parse(savedUser);
+        const parsed = JSON.parse(savedUser);
+        if (parsed?.role) {
+          parsed.role = String(parsed.role).toLowerCase();
+        }
+        return parsed;
       }
-    } catch (e) {
+    } catch (_e) {
       localStorage.removeItem('user');
       localStorage.removeItem('token');
     }
