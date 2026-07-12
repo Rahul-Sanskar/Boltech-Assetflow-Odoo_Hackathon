@@ -3,6 +3,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { sendSuccess } = require("../utils/response");
 const { bookingListScope, isAdmin, isManager } = require("../utils/scope");
+const bookingService = require("../services/booking.service");
 
 exports.getBookings = asyncHandler(async (req, res) => {
   const { status, assetId } = req.query;
@@ -40,34 +41,21 @@ exports.createBooking = asyncHandler(async (req, res) => {
   const { assetId, employeeId, startTime, endTime } = req.body;
 
   const asset = await prisma.asset.findUnique({ where: { id: Number(assetId) } });
-  if (!asset || !asset.isBookable) {
-    throw new AppError("Asset is not bookable", 400);
+  if (!asset) {
+    throw new AppError("Asset not found", 404);
   }
 
+  // Shared bookable resources may be booked across departments
   if (isManager(req.user) && asset.departmentId !== req.user.departmentId && !asset.isBookable) {
     throw new AppError("Asset is outside your department scope", 403);
   }
 
-  const conflict = await prisma.booking.findFirst({
-    where: {
-      assetId: Number(assetId),
-      status: { not: "Cancelled" },
-      startTime: { lt: new Date(endTime) },
-      endTime: { gt: new Date(startTime) }
-    }
-  });
-
-  if (conflict) {
-    throw new AppError("Time slot conflicts with an existing booking", 409);
-  }
-
-  const booking = await prisma.booking.create({
-    data: {
-      assetId: Number(assetId),
-      employeeId: Number(employeeId),
-      startTime: new Date(startTime),
-      endTime: new Date(endTime)
-    }
+  const booking = await bookingService.createBooking({
+    assetId,
+    employeeId,
+    startTime,
+    endTime,
+    actorUserId: req.user.id
   });
 
   return sendSuccess(res, { statusCode: 201, message: "Booking created", data: booking });
@@ -96,9 +84,9 @@ exports.cancelBooking = asyncHandler(async (req, res) => {
     }
   }
 
-  const updated = await prisma.booking.update({
-    where: { id: booking.id },
-    data: { status: "Cancelled" }
+  const updated = await bookingService.cancelBooking({
+    bookingId: booking.id,
+    actorUserId: req.user.id
   });
 
   return sendSuccess(res, { message: "Booking cancelled", data: updated });

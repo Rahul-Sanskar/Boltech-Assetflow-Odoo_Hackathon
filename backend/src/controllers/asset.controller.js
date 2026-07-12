@@ -3,6 +3,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { sendSuccess } = require("../utils/response");
 const { assetListScope, isAdmin, isManager } = require("../utils/scope");
+const assetService = require("../services/asset.service");
 
 exports.getAssets = asyncHandler(async (req, res) => {
   const { status, departmentId, categoryId } = req.query;
@@ -99,20 +100,11 @@ exports.createAsset = asyncHandler(async (req, res) => {
 
 exports.updateAsset = asyncHandler(async (req, res) => {
   const { name, status, condition, location, photo, isBookable, departmentId, categoryId } = req.body;
-  const data = {};
 
-  if (name) data.name = name;
-  if (status) data.status = status;
-  if (condition) data.condition = condition;
-  if (location !== undefined) data.location = location;
-  if (photo !== undefined) data.photo = photo;
-  if (isBookable !== undefined) data.isBookable = isBookable;
-  if (departmentId) data.departmentId = Number(departmentId);
-  if (categoryId) data.categoryId = Number(categoryId);
-
-  const asset = await prisma.asset.update({
-    where: { id: Number(req.params.id) },
-    data
+  const asset = await assetService.updateAsset({
+    assetId: Number(req.params.id),
+    patch: { name, status, condition, location, photo, isBookable, departmentId, categoryId },
+    actorUserId: req.user.id
   });
 
   return sendSuccess(res, { message: "Asset updated", data: asset });

@@ -3,6 +3,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { sendSuccess } = require("../utils/response");
 const { transferListScope, isManager } = require("../utils/scope");
+const transferService = require("../services/transfer.service");
 
 exports.getTransfers = asyncHandler(async (req, res) => {
   const transfers = await prisma.transferRequest.findMany({
@@ -32,12 +33,7 @@ exports.getTransferById = asyncHandler(async (req, res) => {
 exports.createTransfer = asyncHandler(async (req, res) => {
   const { assetId, requestedById } = req.body;
 
-  const transfer = await prisma.transferRequest.create({
-    data: {
-      assetId: Number(assetId),
-      requestedById: Number(requestedById)
-    }
-  });
+  const transfer = await transferService.createTransfer({ assetId, requestedById });
 
   return sendSuccess(res, { statusCode: 201, message: "Transfer request created", data: transfer });
 });
@@ -48,8 +44,8 @@ exports.approveTransfer = asyncHandler(async (req, res) => {
     include: { asset: true, requestedBy: true }
   });
 
-  if (!transfer || transfer.status !== "Requested") {
-    throw new AppError("Transfer not found or already processed", 400);
+  if (!transfer) {
+    throw new AppError("Transfer request not found", 404);
   }
 
   if (isManager(req.user)) {
@@ -61,18 +57,9 @@ exports.approveTransfer = asyncHandler(async (req, res) => {
     }
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const updated = await tx.transferRequest.update({
-      where: { id: transfer.id },
-      data: { status: "Approved", approvedDate: new Date() }
-    });
-
-    await tx.asset.update({
-      where: { id: transfer.assetId },
-      data: { employeeId: transfer.requestedById, status: "Allocated" }
-    });
-
-    return updated;
+  const result = await transferService.approveTransfer({
+    transferId: transfer.id,
+    actorUserId: req.user.id
   });
 
   return sendSuccess(res, { message: "Transfer approved", data: result });
@@ -99,12 +86,10 @@ exports.rejectTransfer = asyncHandler(async (req, res) => {
     }
   }
 
-  const updated = await prisma.transferRequest.update({
-    where: { id: transfer.id },
-    data: {
-      status: "Rejected",
-      rejectedReason: rejectedReason || null
-    }
+  const updated = await transferService.rejectTransfer({
+    transferId: transfer.id,
+    rejectedReason,
+    actorUserId: req.user.id
   });
 
   return sendSuccess(res, { message: "Transfer rejected", data: updated });
