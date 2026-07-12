@@ -64,13 +64,13 @@ input, textarea {
 }
 
 body {
-  background: var(--cd-bg-base);
-  color: var(--cd-text-main);
+  background: var(--bg-base);
+  color: var(--text-main);
   font-family: var(--font-sans);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 ::selection {
-  background: var(--cd-brand-primary);
-  color: var(--cd-text-inverse);
+  background: var(--brand-primary);
+  color: var(--text-inverse);
 }
