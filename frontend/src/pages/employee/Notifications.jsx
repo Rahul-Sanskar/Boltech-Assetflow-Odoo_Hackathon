@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import API from '../../api/API';
 import { 
   Bell, 
   CheckCheck, 
@@ -11,6 +12,8 @@ import {
   CheckCircle2,
   Clock
 } from 'lucide-react';
+import Badge from '../../components/ui/Badge';
+import PageHeader from '../../components/ui/PageHeader';
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -22,21 +25,10 @@ export default function Notifications() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/notifications', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch notifications from the server.');
-      }
-
-      const data = await response.json();
-      setNotifications(data);
+      const response = await API.get('/notifications');
+      setNotifications(response.data.data || []);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
@@ -48,44 +40,22 @@ export default function Notifications() {
 
   const handleMarkAsRead = async (id) => {
     try {
-      const response = await fetch(`/api/notifications/${id}/read`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update notification status.');
-      }
-
+      await API.patch(`/notifications/${id}/read`);
       setNotifications((prev) =>
         prev.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif))
       );
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     }
   };
 
   const handleMarkAllAsRead = async () => {
     try {
       setActionLoading(true);
-      const response = await fetch('/api/notifications/mark-all-read', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to mark all notifications as read.');
-      }
-
+      await API.patch('/notifications/read-all');
       setNotifications((prev) => prev.map((notif) => ({ ...notif, isRead: true })));
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setActionLoading(false);
     }
@@ -98,126 +68,108 @@ export default function Notifications() {
         return <Package className="w-4 h-4 text-[var(--brand-primary)]" />;
       case 'maintenance approved':
       case 'maintenance rejected':
-        return <ShieldAlert className="w-4 h-4 text-[var(--status-warning)]" />;
+        return <ShieldAlert className="w-4 h-4 text-amber-500" />;
       case 'booking confirmed':
       case 'booking reminder':
-        return <Calendar className="w-4 h-4 text-[var(--status-success)]" />;
+        return <Calendar className="w-4 h-4 text-emerald-500" />;
+      case 'transfer requested':
+        return <ArrowRightLeft className="w-4 h-4 text-blue-500" />;
       case 'overdue return alert':
-      case 'audit discrepancy flagged':
-        return <AlertCircle className="w-4 h-4 text-[var(--status-danger)]" />;
+        return <Clock className="w-4 h-4 text-red-500" />;
       default:
-        return <Bell className="w-4 h-4 text-[var(--brand-primary)]" />;
+        return <Bell className="w-4 h-4 text-[var(--text-muted)]" />;
     }
   };
 
-  if (loading) {
-    return (
-      <div className="h-full w-full flex items-center justify-center bg-[var(--bg-base)] text-[var(--text-main)]">
-        <Loader2 className="w-8 h-8 animate-[spin_1s_linear_infinite] text-[var(--brand-primary)]" />
-      </div>
-    );
-  }
+  if (loading) return <Loader2 className="w-8 h-8 animate-[spin_1s_linear_infinite] text-[var(--brand-primary)] mx-auto mt-20" />;
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unread = notifications.filter(n => !n.isRead);
+  const read = notifications.filter(n => n.isRead);
 
   return (
-    <div className="h-full w-full flex flex-col bg-[var(--bg-base)] text-[var(--text-main)] overflow-y-auto custom-scrollbar p-6">
-      
-      {/* Header */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 animate-[fadeIn_0.4s_ease-out]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
-            Stay updated with your resource bookings, asset transfers, and system alerts[cite: 1].
+            Stay updated on your asset assignments, return dates, bookings, and requests.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[var(--bg-surface-hover)] border border-[var(--border-light)]">
-            <Bell className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
-            {unreadCount} Unread
-          </span>
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllAsRead}
-              disabled={actionLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border-light)] text-[var(--text-main)] transition-colors shadow-2xs disabled:opacity-50"
-            >
-              {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-[spin_1s_linear_infinite]" /> : <CheckCheck className="w-3.5 h-3.5" />}
-              Mark all as read
-            </button>
-          )}
-        </div>
+        {unread.length > 0 && (
+          <button
+            onClick={handleMarkAllAsRead}
+            disabled={actionLoading}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--bg-surface-hover)] border border-[var(--border-light)] hover:bg-[var(--border-light)] text-[var(--text-main)] transition-colors disabled:opacity-50"
+          >
+            {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-[spin_1s_linear_infinite]" /> : <CheckCheck className="w-3.5 h-3.5" />}
+            Mark all read
+          </button>
+        )}
       </div>
 
-      {/* Errors */}
       {error && (
-        <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-[var(--status-danger)] flex items-center gap-3">
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-750 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 shrink-0" />
           <span className="text-sm font-medium">{error}</span>
         </div>
       )}
 
-      {/* Notifications List */}
-      <div className="space-y-3">
-        {notifications.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => !item.isRead && handleMarkAsRead(item.id)}
-            className={`flex items-start justify-between gap-4 p-4 rounded-2xl bg-[var(--bg-surface)] border transition-all ${
-              item.isRead 
-                ? 'border-[var(--border-light)] opacity-75' 
-                : 'border-[var(--border-focus)]/40 shadow-xs bg-[var(--bg-surface)]'
-            } hover:border-[var(--border-focus)] cursor-pointer`}
-          >
-            <div className="flex items-start gap-3.5 min-w-0">
-              <div className={`p-2.5 rounded-xl shrink-0 mt-0.5 bg-[var(--bg-base)] border border-[var(--border-light)]`}>
-                {getNotificationIcon(item.type)}
+      {unread.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1">New Notifications</p>
+          {unread.map((n) => (
+            <div key={n.id} className="flex items-start gap-4 p-4 rounded-2xl border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/5 hover:bg-[var(--brand-primary)]/10 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-[var(--brand-primary)]/15 flex items-center justify-center shrink-0">
+                {getNotificationIcon(n.type)}
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[var(--brand-primary)] font-mono">
-                    {item.type}
-                  </span>
-                  {!item.isRead && (
-                    <span className="inline-block w-2 h-2 rounded-full bg-[var(--brand-primary)]" />
-                  )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-[var(--text-main)]">{n.type || 'Alert'}</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">{new Date(n.createdAt).toLocaleString()}</p>
                 </div>
-                <p className="text-xs sm:text-sm text-[var(--text-main)] leading-relaxed">
-                  {item.message}
-                </p>
-                <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] mt-2">
-                  <Clock className="w-3 h-3" />
-                  <span>{new Date(item.createdAt).toLocaleString()}</span>
-                </div>
+                <p className="text-sm text-[var(--text-muted)] mt-1">{n.message}</p>
               </div>
-            </div>
-
-            {item.isRead ? (
-              <CheckCircle2 className="w-4 h-4 text-[var(--text-muted)] shrink-0 opacity-40 mt-1" />
-            ) : (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleMarkAsRead(item.id);
-                }}
-                className="shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)] transition-colors"
+              <button 
+                onClick={() => handleMarkAsRead(n.id)} 
+                className="p-1.5 rounded-lg text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/10 transition-all active:scale-95 shrink-0" 
                 title="Mark as read"
               >
-                <CheckCheck className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4" />
               </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {notifications.length === 0 && !loading && (
-        <div className="flex flex-col items-center justify-center h-64 text-center border-2 border-dashed border-[var(--border-light)] rounded-2xl p-6">
-          <Bell className="w-10 h-10 text-[var(--text-muted)] mb-3 opacity-40" />
-          <h2 className="text-sm font-semibold">No notifications</h2>
-          <p className="text-xs text-[var(--text-muted)] mt-1">You're completely caught up with your updates.</p>
+            </div>
+          ))}
         </div>
       )}
 
+      {read.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1">Earlier Notifications</p>
+          {read.map((n) => (
+            <div key={n.id} className="flex items-start gap-4 p-4 rounded-2xl border border-[var(--border-light)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-[var(--bg-surface-hover)] flex items-center justify-center text-[var(--text-muted)] shrink-0">
+                {getNotificationIcon(n.type)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-[var(--text-main)]">{n.type || 'Alert'}</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">{new Date(n.createdAt).toLocaleString()}</p>
+                </div>
+                <p className="text-sm text-[var(--text-muted)] mt-1">{n.message}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {notifications.length === 0 && (
+        <div className="text-center py-12 border-2 border-dashed border-[var(--border-light)] rounded-2xl">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--bg-surface-hover)] flex items-center justify-center text-[var(--text-muted)]">
+            <Bell className="w-8 h-8" />
+          </div>
+          <p className="text-sm font-semibold">All caught up!</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">You have no active alerts or updates.</p>
+        </div>
+      )}
     </div>
   );
 }

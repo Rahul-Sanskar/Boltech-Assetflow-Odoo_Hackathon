@@ -13,6 +13,7 @@ const reportRoutes = require("./report.routes");
 const notificationRoutes = require("./notification.routes");
 const transferRoutes = require("./transfer.routes");
 const dashboardRoutes = require("./dashboard.routes");
+const aiRoutes = require("./ai.routes");
 
 const router = express.Router();
 
@@ -30,5 +31,6 @@ router.use("/reports", reportRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/transfers", transferRoutes);
 router.use("/dashboard", dashboardRoutes);
+router.use("/ai", aiRoutes);
 
 module.exports = router;

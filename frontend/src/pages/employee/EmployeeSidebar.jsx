@@ -1,44 +1,44 @@
-import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Calendar, 
-  Wrench, 
-  Bell, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Package,
+  Calendar,
+  Wrench,
+  Bell,
+  LogOut,
   Boxes,
-  X 
+  X,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+
+const navItems = [
+  { name: 'Dashboard', path: '/employee/home', icon: LayoutDashboard },
+  { name: 'My Assets', path: '/employee/my-assets', icon: Package },
+  { name: 'Bookings', path: '/employee/bookings', icon: Calendar },
+  { name: 'Maintenance', path: '/employee/maintenance', icon: Wrench },
+  { name: 'Notifications', path: '/employee/notifications', icon: Bell },
+];
 
 export default function EmployeeSidebar({ isMobileOpen, isDesktopCollapsed, closeMobile }) {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 
-  const navItems = [
-    { name: 'Dashboard', path: '/employee/home', icon: LayoutDashboard },
-    { name: 'My Assets', path: '/employee/my-assets', icon: Package },
-    { name: 'Bookings', path: '/employee/bookings', icon: Calendar },
-    { name: 'Maintenance', path: '/employee/maintenance', icon: Wrench },
-    { name: 'Notifications', path: '/employee/notifications', icon: Bell },
-  ];
-
   return (
     <>
-      {/* Mobile Backdrop Overlay */}
       {isMobileOpen && (
-        <div 
+        <div
           onClick={closeMobile}
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs md:hidden animate-[fadeIn_0.2s_ease-out]"
         />
       )}
 
-      {/* Sidebar Container */}
-      <aside className={`
+      <aside
+        className={`
         fixed md:static inset-y-0 left-0 z-50
         h-full flex flex-col justify-between 
         bg-[var(--bg-surface)] border-r border-[var(--border-light)] 
@@ -46,11 +46,9 @@ export default function EmployeeSidebar({ isMobileOpen, isDesktopCollapsed, clos
         transition-all duration-300 ease-in-out
         ${isDesktopCollapsed ? 'md:w-20' : 'md:w-64'}
         ${isMobileOpen ? 'w-64 translate-x-0' : '-translate-x-full md:translate-x-0'}
-      `}>
-        
-        {/* Top Section */}
+      `}
+      >
         <div className="flex flex-col gap-6">
-          {/* Brand Logo & Mobile Close Trigger */}
           <div className="flex items-center justify-between px-1 py-2">
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="p-2 rounded-xl bg-[var(--brand-primary)] text-[var(--text-inverse)] shadow-sm shrink-0">
@@ -59,11 +57,14 @@ export default function EmployeeSidebar({ isMobileOpen, isDesktopCollapsed, clos
               {(!isDesktopCollapsed || isMobileOpen) && (
                 <div className="truncate">
                   <h1 className="text-base font-bold tracking-tight leading-none">AssetFlow</h1>
-                  <span className="text-[10px] font-mono font-medium text-[var(--text-muted)] tracking-wider uppercase">Employee Portal</span>
+                  <span className="text-[10px] font-mono font-medium text-[var(--text-muted)] tracking-wider uppercase">
+                    Employee Portal
+                  </span>
                 </div>
               )}
             </div>
             <button
+              type="button"
               onClick={closeMobile}
               className="p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] md:hidden transition-colors"
             >
@@ -71,7 +72,6 @@ export default function EmployeeSidebar({ isMobileOpen, isDesktopCollapsed, clos
             </button>
           </div>
 
-          {/* Navigation Links */}
           <nav className="space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -99,14 +99,14 @@ export default function EmployeeSidebar({ isMobileOpen, isDesktopCollapsed, clos
           </nav>
         </div>
 
-        {/* Bottom Section: Logout Option */}
         <div className="pt-4 border-t border-[var(--border-light)]">
           <button
+            type="button"
             onClick={() => {
               handleLogout();
               closeMobile();
             }}
-            title={isDesktopCollapsed && !isMobileOpen ? "Logout" : undefined}
+            title={isDesktopCollapsed && !isMobileOpen ? 'Logout' : undefined}
             className={`w-full flex items-center gap-3 py-2.5 rounded-xl text-xs font-medium text-[var(--status-danger)] hover:bg-rose-500/10 transition-colors ${
               isDesktopCollapsed && !isMobileOpen ? 'md:justify-center md:px-0 px-3.5' : 'px-3.5'
             }`}
@@ -115,7 +115,6 @@ export default function EmployeeSidebar({ isMobileOpen, isDesktopCollapsed, clos
             {(!isDesktopCollapsed || isMobileOpen) && <span>Logout</span>}
           </button>
         </div>
-
       </aside>
     </>
   );
