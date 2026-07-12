@@ -1,10 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Menu, Sun, Moon, Bell, LogOut } from 'lucide-react';
+import API from '../../api/API';
 
 const ManagerNavbar = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadCount = () => {
+    API.get('/notifications')
+      .then((res) => {
+        const list = res.data.data || [];
+        setUnreadCount(list.filter((n) => !n.isRead).length);
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const toggleTheme = () => {
     document.documentElement.classList.toggle('dark');
@@ -32,10 +50,17 @@ const ManagerNavbar = ({ toggleSidebar }) => {
           {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
 
-        <button className="relative p-2.5 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)] transition-all duration-200 active:scale-90">
+        <Link
+          to="/manager/notifications"
+          className="relative p-2.5 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)] transition-all duration-200 active:scale-90"
+        >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-        </button>
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+              {unreadCount}
+            </span>
+          )}
+        </Link>
 
         <div className="w-px h-8 bg-[var(--border-light)] mx-1" />
 

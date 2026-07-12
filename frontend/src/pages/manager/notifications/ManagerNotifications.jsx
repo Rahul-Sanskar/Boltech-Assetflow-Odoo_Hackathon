@@ -30,8 +30,8 @@ const ManagerNotifications = () => {
 
   if (loading) return <LoadingSpinner />;
 
-  const unread = notifications.filter(n => !n.read);
-  const read = notifications.filter(n => n.read);
+  const unread = notifications.filter(n => !n.isRead);
+  const read = notifications.filter(n => n.isRead);
 
   return (
     <div className="space-y-6 animate-[fadeIn_0.4s_ease-out]">

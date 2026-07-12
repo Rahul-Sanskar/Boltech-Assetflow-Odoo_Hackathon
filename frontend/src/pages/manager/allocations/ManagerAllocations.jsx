@@ -38,7 +38,7 @@ const ManagerAllocations = () => {
         employeeId: Number(form.employeeId),
       };
       if (form.expectedReturnDate) {
-        payload.expectedReturnDate = form.expectedReturnDate;
+        payload.expectedReturn = form.expectedReturnDate;
       }
       await API.post('/allocations', payload);
       setShowCreate(false);
@@ -63,8 +63,8 @@ const ManagerAllocations = () => {
   };
 
   const isOverdue = (allocation) => {
-    if (allocation.returnedAt || !allocation.expectedReturnDate) return false;
-    return new Date(allocation.expectedReturnDate) < new Date();
+    if (allocation.returnedDate || !allocation.expectedReturn) return false;
+    return new Date(allocation.expectedReturn) < new Date();
   };
 
   const columns = [
@@ -81,18 +81,18 @@ const ManagerAllocations = () => {
     )},
     { label: 'Assigned To', key: 'employee', render: (row) => row.employee?.name || '—' },
     { label: 'Allocated', key: 'createdAt', render: (row) => new Date(row.createdAt).toLocaleDateString() },
-    { label: 'Expected Return', key: 'expectedReturnDate', render: (row) => {
-      if (!row.expectedReturnDate) return '—';
-      const date = new Date(row.expectedReturnDate).toLocaleDateString();
+    { label: 'Expected Return', key: 'expectedReturn', render: (row) => {
+      if (!row.expectedReturn) return '—';
+      const date = new Date(row.expectedReturn).toLocaleDateString();
       if (isOverdue(row)) return <span className="text-red-600 font-semibold">{date} (Overdue)</span>;
       return date;
     }},
-    { label: 'Status', key: 'returnedAt', render: (row) => {
-      if (row.returnedAt) return <Badge variant="success">Returned</Badge>;
+    { label: 'Status', key: 'returnedDate', render: (row) => {
+      if (row.returnedDate) return <Badge variant="success">Returned</Badge>;
       if (isOverdue(row)) return <Badge variant="danger">Overdue</Badge>;
       return <Badge variant="warning">Active</Badge>;
     }},
-    { label: '', key: 'actions', render: (row) => !row.returnedAt && (
+    { label: '', key: 'actions', render: (row) => !row.returnedDate && (
       <button onClick={(e) => { e.stopPropagation(); setShowReturn(row); }} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors">
         Return
       </button>
@@ -103,7 +103,7 @@ const ManagerAllocations = () => {
 
   return (
     <div>
-      <PageHeader title="Allocations" subtitle={`${allocations.filter(a => !a.returnedAt).length} active allocations`} actionLabel="Allocate Asset" onAction={() => setShowCreate(true)} />
+      <PageHeader title="Allocations" subtitle={`${allocations.filter(a => !a.returnedDate).length} active allocations`} actionLabel="Allocate Asset" onAction={() => setShowCreate(true)} />
       <DataTable columns={columns} data={allocations} emptyMessage="No allocations found." />
 
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Allocate Asset">
