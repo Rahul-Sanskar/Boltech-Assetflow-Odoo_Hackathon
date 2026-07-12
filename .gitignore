@@ -1,2 +1,7 @@
-.env
+backend/.env
+backend/node_modules
+backend/prisma/dev.db
+backend/dist
 node_modules
+.env
+dist
