@@ -16,7 +16,6 @@ import Login from './pages/global/Login';
 import Register from './pages/global/Register';
 import { NotFoundPage, ForbiddenPage, UnauthorizedPage } from './pages/global/ErrorPages';
 
-<<<<<<< HEAD
 const AdminHome = lazy(() => import('./pages/admin/AdminHome'));
 const AssetList = lazy(() => import('./pages/admin/assets/AssetList'));
 const DepartmentList = lazy(() => import('./pages/admin/departments/DepartmentList'));

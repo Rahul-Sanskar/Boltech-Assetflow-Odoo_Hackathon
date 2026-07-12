@@ -20,11 +20,67 @@ const AdminNavbar = ({ toggleSidebar }) => {
     return () => document.removeEventListener('mousedown', onClick);
   }, [profileOpen]);
 
-  const toggleTheme = () => {
-    document.documentElement.classList.toggle('dark');
-    const newTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-    localStorage.setItem('theme', newTheme);
-    setIsDark(newTheme === 'dark');
+  const toggleTheme = (event) => {
+    const isCurrentlyDark = document.documentElement.classList.contains('dark');
+    const newTheme = isCurrentlyDark ? 'light' : 'dark';
+
+    if (!document.startViewTransition) {
+      document.documentElement.classList.toggle('dark');
+      document.documentElement.style.colorScheme = newTheme;
+      localStorage.setItem('theme', newTheme);
+      setIsDark(newTheme === 'dark');
+      return;
+    }
+
+    const x = event.clientX;
+    const y = event.clientY;
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
+
+    const transition = document.startViewTransition(() => {
+      document.documentElement.classList.toggle('dark');
+      document.documentElement.style.colorScheme = newTheme;
+      localStorage.setItem('theme', newTheme);
+      setIsDark(newTheme === 'dark');
+    });
+
+    transition.ready.then(() => {
+      if (isCurrentlyDark) {
+        // Dark -> Light: Outward
+        document.documentElement.animate(
+          {
+            clipPath: [
+              `circle(0px at ${x}px ${y}px)`,
+              `circle(${endRadius}px at ${x}px ${y}px)`,
+            ],
+          },
+          {
+            duration: 400,
+            easing: 'ease-out',
+            pseudoElement: '::view-transition-new(root)',
+            fill: 'both',
+          }
+        );
+      } else {
+        // Light -> Dark: Inward
+        document.documentElement.animate(
+          {
+            clipPath: [
+              `circle(${endRadius}px at ${x}px ${y}px)`,
+              `circle(0px at ${x}px ${y}px)`,
+            ],
+          },
+          {
+            duration: 400,
+            easing: 'ease-in',
+            pseudoElement: '::view-transition-old(root)',
+            fill: 'both',
+          }
+        );
+      }
+    });
   };
 
   const initials = (user?.name || 'A').charAt(0).toUpperCase();
@@ -53,24 +109,26 @@ const AdminNavbar = ({ toggleSidebar }) => {
           {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
 
-        <NotificationBell />
+        <div className="mr-1">
+          <NotificationBell />
+        </div>
 
-        <div className="w-px h-8 bg-[var(--border-light)] mx-1" />
+        <div className="w-px h-8 bg-[var(--border-light)] mx-2" />
 
         <div className="relative" ref={profileRef}>
           <button
             type="button"
             onClick={() => setProfileOpen((v) => !v)}
-            className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl hover:bg-[var(--bg-surface-hover)] transition-colors"
+            className="flex items-center gap-3 pl-1 cursor-pointer hover:opacity-80 transition-opacity outline-none"
             aria-expanded={profileOpen}
             aria-haspopup="true"
           >
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--brand-primary)] to-purple-400 flex items-center justify-center text-white text-xs font-bold">
-              {initials}
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-bold text-[var(--text-main)] leading-tight">{user?.name || 'Admin'}</p>
+              <p className="text-[11px] font-medium text-[var(--brand-primary)] capitalize">{user?.role || 'Admin'}</p>
             </div>
-            <div className="text-left hidden sm:block">
-              <p className="text-sm font-semibold text-[var(--text-main)] leading-tight">{user?.name || 'Admin'}</p>
-              <p className="text-[11px] text-[var(--text-muted)] capitalize">{user?.role}</p>
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-hover)] flex items-center justify-center shrink-0 shadow-sm border-2 border-[var(--bg-surface)]">
+              <span className="text-[var(--text-inverse)] text-sm font-bold">{initials}</span>
             </div>
           </button>
 

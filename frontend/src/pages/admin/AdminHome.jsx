@@ -7,6 +7,8 @@ import StatCard from '../../components/ui/StatCard';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Badge from '../../components/ui/Badge';
 import ErrorState from '../../components/ui/ErrorState';
+// Make sure this path is correct for your project
+import AiAction from '../../components/AiAction.jsx'; 
 import { getErrorMessage, statusBadgeVariant } from '../../utils/apiError';
 import {
   Box,
@@ -161,6 +163,7 @@ const AdminHome = () => {
         </div>
       </section>
 
+      {/* FIRST GRID CONTAINER */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Notifications */}
         <Panel
@@ -185,35 +188,36 @@ const AdminHome = () => {
           ))}
         </Panel>
 
-<<<<<<< HEAD
-      {!stats && (
-        <div className="text-center text-gray-500 py-12">
-          <p>Unable to load dashboard data.</p>
-        </div>
-      )}
+        {!stats && (
+          <div className="text-center text-gray-500 py-12 lg:col-span-2">
+            <p>Unable to load dashboard data.</p>
+          </div>
+        )}
 
-      <div className="mt-8 bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="text-xl font-semibold text-gray-800 mb-1">✨ AI Business Insights</h2>
-        <p className="text-sm text-gray-500 mb-2">Get an AI-generated summary of your organization's asset health.</p>
-        <AiAction
-          label="Generate Business Insights"
-          endpoint="/ai/dashboard"
-          payload={{
-            available: stats?.stats?.availableAssets || 0,
-            allocated: stats?.stats?.allocatedAssets || 0,
-            maintenance: stats?.stats?.underMaintenance || 0,
-            overdue: stats?.stats?.pendingMaintenance || 0,
-          }}
-          render={(d) => (
-            <div className="space-y-1">
-              <p><strong>Summary:</strong> {d.summary}</p>
-              <p><strong>Top Insight:</strong> {d.topInsight}</p>
-              <p><strong>Biggest Risk:</strong> {d.biggestRisk}</p>
-              <p><strong>Recommendation:</strong> {d.recommendation}</p>
-            </div>
-          )}
-        />
-=======
+        {/* AI ACTIONS PANEL - Fixed the missing closing div here */}
+        <div className="lg:col-span-2 mt-2 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-light)] p-5">
+          <h2 className="text-xl font-semibold text-[var(--text-main)] mb-1">✨ AI Business Insights</h2>
+          <p className="text-sm text-[var(--text-muted)] mb-4">Get an AI-generated summary of your organization's asset health.</p>
+          <AiAction
+            label="Generate Business Insights"
+            endpoint="/ai/dashboard"
+            payload={{
+              available: stats?.stats?.availableAssets || 0,
+              allocated: stats?.stats?.allocatedAssets || 0,
+              maintenance: stats?.stats?.underMaintenance || 0,
+              overdue: stats?.stats?.pendingMaintenance || 0,
+            }}
+            render={(d) => (
+              <div className="space-y-1">
+                <p><strong>Summary:</strong> {d.summary}</p>
+                <p><strong>Top Insight:</strong> {d.topInsight}</p>
+                <p><strong>Biggest Risk:</strong> {d.biggestRisk}</p>
+                <p><strong>Recommendation:</strong> {d.recommendation}</p>
+              </div>
+            )}
+          />
+        </div> {/* <--- THIS CLOSING TAG WAS MISSING */}
+
         {/* Pending Transfers */}
         <Panel
           title="Pending Transfers"
@@ -302,7 +306,7 @@ const AdminHome = () => {
           ))}
         </Panel>
 
-        {/* Recent Allocations (from dashboard API) */}
+        {/* Recent Allocations */}
         <Panel
           title="Recent Allocations"
           badge={recentAllocations.length}
@@ -323,9 +327,9 @@ const AdminHome = () => {
             />
           ))}
         </Panel>
-      </div>
+      </div> {/* <--- THIS CLOSING TAG FOR THE FIRST GRID WAS MISSING */}
 
-      {/* Recent Activity + Maintenance from dashboard */}
+      {/* SECOND GRID CONTAINER */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Panel
           title="Recent Activity"
@@ -377,7 +381,6 @@ const AdminHome = () => {
             />
           ))}
         </Panel>
->>>>>>> main
       </div>
     </div>
   );
@@ -386,8 +389,8 @@ const AdminHome = () => {
 function Panel({ title, badge, badgeVariant = 'info', to, empty, children, icon, iconClass }) {
   const items = React.Children.toArray(children);
   return (
-    <div className="rounded-2xl border border-[var(--border-light)] bg-[var(--bg-surface)] overflow-hidden">
-      <div className="px-6 py-4 border-b border-[var(--border-light)] flex items-center justify-between">
+    <div className="rounded-2xl border border-[var(--border-light)] bg-[var(--bg-surface)] overflow-hidden flex flex-col h-full">
+      <div className="px-6 py-4 border-b border-[var(--border-light)] flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           {icon && (
             <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${iconClass}`}>
@@ -403,9 +406,9 @@ function Panel({ title, badge, badgeVariant = 'info', to, empty, children, icon,
           </Link>
         </div>
       </div>
-      <div className="divide-y divide-[var(--border-light)]">
+      <div className="divide-y divide-[var(--border-light)] flex-1 overflow-y-auto custom-scrollbar">
         {items.length > 0 ? items : (
-          <div className="px-6 py-8 text-center text-sm text-[var(--text-muted)]">{empty}</div>
+          <div className="px-6 py-8 text-center text-sm text-[var(--text-muted)] h-full flex items-center justify-center">{empty}</div>
         )}
       </div>
     </div>
