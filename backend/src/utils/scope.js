@@ -106,6 +106,7 @@ const userListScope = (user) => {
 
 /** Departments */
 const departmentListScope = (user) => {
+  if (!user) return {};
   if (isAdmin(user)) return {};
   if (isManager(user) || isEmployee(user)) return { id: user.departmentId };
   return { id: -1 };
