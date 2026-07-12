@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../../api/API';
-import { useAuth } from '../../../context/AuthContext';
 import PageHeader from '../../../components/ui/PageHeader';
 import DataTable from '../../../components/ui/DataTable';
 import Modal from '../../../components/ui/Modal';
@@ -13,7 +12,6 @@ const statusBadge = (s) => {
 };
 
 const ManagerBookings = () => {
-  const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [assets, setAssets] = useState([]);
   const [employees, setEmployees] = useState([]);
