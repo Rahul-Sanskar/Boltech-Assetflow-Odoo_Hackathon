@@ -1,77 +1,58 @@
 const prisma = require("../config/db");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
+const { sendSuccess } = require("../utils/response");
 
-exports.getCategories = async (req, res) => {
-  try {
-    const categories = await prisma.category.findMany({
-      include: { _count: { select: { assets: true } } }
-    });
-    res.json(categories);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+exports.getCategories = asyncHandler(async (req, res) => {
+  const categories = await prisma.category.findMany({
+    include: { _count: { select: { assets: true } } }
+  });
+
+  return sendSuccess(res, { message: "Categories retrieved", data: categories });
+});
+
+exports.getCategoryById = asyncHandler(async (req, res) => {
+  const category = await prisma.category.findUnique({
+    where: { id: Number(req.params.id) },
+    include: { assets: true }
+  });
+
+  if (!category) {
+    throw new AppError("Category not found", 404);
   }
-};
 
-exports.getCategoryById = async (req, res) => {
-  try {
-    const category = await prisma.category.findUnique({
-      where: { id: Number(req.params.id) },
-      include: { assets: true }
-    });
+  return sendSuccess(res, { message: "Category retrieved", data: category });
+});
 
-    if (!category) {
-      return res.status(404).json({ error: "Category not found" });
-    }
+exports.createCategory = asyncHandler(async (req, res) => {
+  const { name, customFields } = req.body;
 
-    res.json(category);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+  const category = await prisma.category.create({
+    data: { name, customFields }
+  });
 
-exports.createCategory = async (req, res) => {
-  try {
-    const { name, customFields } = req.body;
+  return sendSuccess(res, { statusCode: 201, message: "Category created", data: category });
+});
 
-    if (!name) {
-      return res.status(400).json({ error: "Name is required" });
-    }
+exports.updateCategory = asyncHandler(async (req, res) => {
+  const { name, customFields } = req.body;
+  const data = {};
 
-    const category = await prisma.category.create({
-      data: { name, customFields }
-    });
+  if (name) data.name = name;
+  if (customFields !== undefined) data.customFields = customFields;
 
-    res.status(201).json(category);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+  const category = await prisma.category.update({
+    where: { id: Number(req.params.id) },
+    data
+  });
 
-exports.updateCategory = async (req, res) => {
-  try {
-    const { name, customFields } = req.body;
-    const data = {};
+  return sendSuccess(res, { message: "Category updated", data: category });
+});
 
-    if (name) data.name = name;
-    if (customFields !== undefined) data.customFields = customFields;
+exports.deleteCategory = asyncHandler(async (req, res) => {
+  await prisma.category.delete({
+    where: { id: Number(req.params.id) }
+  });
 
-    const category = await prisma.category.update({
-      where: { id: Number(req.params.id) },
-      data
-    });
-
-    res.json(category);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-exports.deleteCategory = async (req, res) => {
-  try {
-    await prisma.category.delete({
-      where: { id: Number(req.params.id) }
-    });
-    res.json({ message: "Category deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+  return sendSuccess(res, { message: "Category deleted successfully", data: null });
+});

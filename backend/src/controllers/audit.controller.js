@@ -1,142 +1,119 @@
 const prisma = require("../config/db");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
+const { sendSuccess } = require("../utils/response");
+const { auditListScope, isAdmin, isManager } = require("../utils/scope");
 
-exports.getAuditCycles = async (req, res) => {
-  try {
-    const cycles = await prisma.auditCycle.findMany({
-      include: {
-        department: { select: { id: true, name: true } },
-        assignments: { include: { auditor: { select: { id: true, name: true } } } },
-        _count: { select: { items: true } }
-      },
-      orderBy: { startDate: "desc" }
-    });
-    res.json(cycles);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+exports.getAuditCycles = asyncHandler(async (req, res) => {
+  const cycles = await prisma.auditCycle.findMany({
+    where: auditListScope(req.user),
+    include: {
+      department: { select: { id: true, name: true } },
+      assignments: { include: { auditor: { select: { id: true, name: true } } } },
+      _count: { select: { items: true } }
+    },
+    orderBy: { startDate: "desc" }
+  });
 
-exports.getAuditCycleById = async (req, res) => {
-  try {
-    const cycle = await prisma.auditCycle.findUnique({
-      where: { id: Number(req.params.id) },
-      include: {
-        department: true,
-        assignments: { include: { auditor: { select: { id: true, name: true } } } },
-        items: { include: { asset: true } }
-      }
-    });
+  return sendSuccess(res, { message: "Audit cycles retrieved", data: cycles });
+});
 
-    if (!cycle) {
-      return res.status(404).json({ error: "Audit cycle not found" });
+exports.getAuditCycleById = asyncHandler(async (req, res) => {
+  const cycle = await prisma.auditCycle.findUnique({
+    where: { id: Number(req.params.id) },
+    include: {
+      department: true,
+      assignments: { include: { auditor: { select: { id: true, name: true } } } },
+      items: { include: { asset: true } }
     }
+  });
 
-    res.json(cycle);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  if (!cycle) {
+    throw new AppError("Audit cycle not found", 404);
   }
-};
 
-exports.createAuditCycle = async (req, res) => {
-  try {
-    const { name, scope, departmentId, location, startDate, endDate } = req.body;
-
-    if (!name || !scope || !startDate || !endDate) {
-      return res.status(400).json({ error: "name, scope, startDate and endDate are required" });
+  if (!isAdmin(req.user)) {
+    const assigned = cycle.assignments.some((a) => a.auditorId === req.user.id);
+    const inDept = cycle.departmentId === req.user.departmentId || cycle.departmentId == null;
+    if (isManager(req.user) && !assigned && !inDept) {
+      throw new AppError("Audit cycle is outside your scope", 403);
     }
-
-    const cycle = await prisma.auditCycle.create({
-      data: {
-        name,
-        scope,
-        departmentId: departmentId ? Number(departmentId) : null,
-        location: location || null,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate)
-      }
-    });
-
-    res.status(201).json(cycle);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-exports.assignAuditor = async (req, res) => {
-  try {
-    const { auditorId } = req.body;
-    const auditCycleId = Number(req.params.id);
-
-    if (!auditorId) {
-      return res.status(400).json({ error: "auditorId is required" });
+    if (!isManager(req.user) && !assigned) {
+      throw new AppError("You are not assigned to this audit cycle", 403);
     }
-
-    const assignment = await prisma.auditAssignment.create({
-      data: {
-        auditCycleId,
-        auditorId: Number(auditorId)
-      }
-    });
-
-    res.status(201).json(assignment);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
   }
-};
 
-exports.addAuditItem = async (req, res) => {
-  try {
-    const { assetId, result, notes } = req.body;
-    const auditCycleId = Number(req.params.id);
+  return sendSuccess(res, { message: "Audit cycle retrieved", data: cycle });
+});
 
-    if (!assetId) {
-      return res.status(400).json({ error: "assetId is required" });
+exports.createAuditCycle = asyncHandler(async (req, res) => {
+  const { name, scope, departmentId, location, startDate, endDate } = req.body;
+
+  const cycle = await prisma.auditCycle.create({
+    data: {
+      name,
+      scope,
+      departmentId: departmentId ? Number(departmentId) : null,
+      location: location || null,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate)
     }
+  });
 
-    const item = await prisma.auditItem.create({
-      data: {
-        auditCycleId,
-        assetId: Number(assetId),
-        result: result || null,
-        notes: notes || null
-      }
-    });
+  return sendSuccess(res, { statusCode: 201, message: "Audit cycle created", data: cycle });
+});
 
-    res.status(201).json(item);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+exports.assignAuditor = asyncHandler(async (req, res) => {
+  const { auditorId } = req.body;
+  const auditCycleId = Number(req.params.id);
 
-exports.updateAuditItem = async (req, res) => {
-  try {
-    const { result, notes } = req.body;
+  const assignment = await prisma.auditAssignment.create({
+    data: {
+      auditCycleId,
+      auditorId: Number(auditorId)
+    }
+  });
 
-    const item = await prisma.auditItem.update({
-      where: { id: Number(req.params.itemId) },
-      data: {
-        result: result || undefined,
-        notes: notes !== undefined ? notes : undefined
-      }
-    });
+  return sendSuccess(res, { statusCode: 201, message: "Auditor assigned", data: assignment });
+});
 
-    res.json(item);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+exports.addAuditItem = asyncHandler(async (req, res) => {
+  const { assetId, result, notes } = req.body;
+  const auditCycleId = Number(req.params.id);
 
-exports.updateAuditCycle = async (req, res) => {
-  try {
-    const { status } = req.body;
+  const item = await prisma.auditItem.create({
+    data: {
+      auditCycleId,
+      assetId: Number(assetId),
+      result: result || null,
+      notes: notes || null
+    }
+  });
 
-    const cycle = await prisma.auditCycle.update({
-      where: { id: Number(req.params.id) },
-      data: { status }
-    });
+  return sendSuccess(res, { statusCode: 201, message: "Audit item added", data: item });
+});
 
-    res.json(cycle);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+exports.updateAuditItem = asyncHandler(async (req, res) => {
+  const { result, notes } = req.body;
+
+  const item = await prisma.auditItem.update({
+    where: { id: Number(req.params.itemId) },
+    data: {
+      result: result || undefined,
+      notes: notes !== undefined ? notes : undefined
+    }
+  });
+
+  return sendSuccess(res, { message: "Audit item updated", data: item });
+});
+
+exports.updateAuditCycle = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+
+  const cycle = await prisma.auditCycle.update({
+    where: { id: Number(req.params.id) },
+    data: { status }
+  });
+
+  return sendSuccess(res, { message: "Audit cycle updated", data: cycle });
+});

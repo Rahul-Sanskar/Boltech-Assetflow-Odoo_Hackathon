@@ -1,22 +1,26 @@
 const express = require("express");
 const cors = require("cors");
 const apiRouter = require("./routes");
+const requestLogger = require("./middleware/requestLogger");
+const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
+const { sendSuccess } = require("./utils/response");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(requestLogger);
 
 app.get("/", (req, res) => {
-  res.json({ message: "AssetFlow Backend API is running. Access endpoints via /api." });
+  return sendSuccess(res, {
+    message: "AssetFlow Backend API is running. Access endpoints via /api.",
+    data: null
+  });
 });
 
 app.use("/api", apiRouter);
 
-app.use((err, req, res, next) => {
-  res.status(err.status || 500).json({
-    error: err.message || "Internal Server Error"
-  });
-});
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 module.exports = app;

@@ -1,115 +1,127 @@
 const prisma = require("../config/db");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
+const { sendSuccess } = require("../utils/response");
+const { assetListScope, isAdmin, isManager } = require("../utils/scope");
 
-exports.getAssets = async (req, res) => {
-  try {
-    const { status, departmentId, categoryId } = req.query;
-    const where = {};
+exports.getAssets = asyncHandler(async (req, res) => {
+  const { status, departmentId, categoryId } = req.query;
+  const where = { ...assetListScope(req.user) };
 
-    if (status) where.status = status;
-    if (departmentId) where.departmentId = Number(departmentId);
-    if (categoryId) where.categoryId = Number(categoryId);
+  if (status) where.status = status;
+  if (categoryId) where.categoryId = Number(categoryId);
 
-    const assets = await prisma.asset.findMany({
-      where,
-      include: {
-        department: { select: { id: true, name: true } },
-        category: { select: { id: true, name: true } },
-        employee: { select: { id: true, name: true } }
-      }
-    });
-    res.json(assets);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-exports.getAssetById = async (req, res) => {
-  try {
-    const asset = await prisma.asset.findUnique({
-      where: { id: Number(req.params.id) },
-      include: {
-        department: true,
-        category: true,
-        employee: true,
-        allocations: { include: { employee: true } },
-        maintenanceRequests: true,
-        bookings: true,
-        auditItems: true
-      }
-    });
-
-    if (!asset) {
-      return res.status(404).json({ error: "Asset not found" });
+  if (departmentId) {
+    const requestedDept = Number(departmentId);
+    if (!isAdmin(req.user) && requestedDept !== req.user.departmentId) {
+      throw new AppError("You cannot query assets outside your department", 403);
     }
-
-    res.json(asset);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    where.departmentId = requestedDept;
   }
-};
 
-exports.createAsset = async (req, res) => {
-  try {
-    const { name, assetTag, serialNumber, condition, location, acquisitionDate, acquisitionCost, photo, isBookable, departmentId, categoryId } = req.body;
-
-    if (!name || !assetTag || !departmentId || !categoryId) {
-      return res.status(400).json({ error: "Name, assetTag, departmentId and categoryId are required" });
+  const assets = await prisma.asset.findMany({
+    where,
+    include: {
+      department: { select: { id: true, name: true } },
+      category: { select: { id: true, name: true } },
+      employee: { select: { id: true, name: true } }
     }
+  });
 
-    const asset = await prisma.asset.create({
-      data: {
-        name,
-        assetTag,
-        serialNumber: serialNumber || null,
-        condition: condition || "Good",
-        location: location || null,
-        acquisitionDate: acquisitionDate ? new Date(acquisitionDate) : null,
-        acquisitionCost: acquisitionCost ? Number(acquisitionCost) : null,
-        photo: photo || null,
-        isBookable: isBookable || false,
-        departmentId: Number(departmentId),
-        categoryId: Number(categoryId)
-      }
-    });
+  return sendSuccess(res, { message: "Assets retrieved", data: assets });
+});
 
-    res.status(201).json(asset);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+exports.getAssetById = asyncHandler(async (req, res) => {
+  const asset = await prisma.asset.findUnique({
+    where: { id: Number(req.params.id) },
+    include: {
+      department: true,
+      category: true,
+      employee: true,
+      allocations: { include: { employee: true } },
+      maintenanceRequests: true,
+      bookings: true,
+      auditItems: true
+    }
+  });
+
+  if (!asset) {
+    throw new AppError("Asset not found", 404);
   }
-};
 
-exports.updateAsset = async (req, res) => {
-  try {
-    const { name, status, condition, location, photo, isBookable, departmentId, categoryId } = req.body;
-    const data = {};
-
-    if (name) data.name = name;
-    if (status) data.status = status;
-    if (condition) data.condition = condition;
-    if (location !== undefined) data.location = location;
-    if (photo !== undefined) data.photo = photo;
-    if (isBookable !== undefined) data.isBookable = isBookable;
-    if (departmentId) data.departmentId = Number(departmentId);
-    if (categoryId) data.categoryId = Number(categoryId);
-
-    const asset = await prisma.asset.update({
-      where: { id: Number(req.params.id) },
-      data
-    });
-
-    res.json(asset);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  if (!isAdmin(req.user)) {
+    const inDept = asset.departmentId === req.user.departmentId;
+    const isHolder = asset.employeeId === req.user.employeeId;
+    if (isManager(req.user) && !inDept) {
+      throw new AppError("Asset is outside your department scope", 403);
+    }
+    if (!isManager(req.user) && !inDept && !isHolder) {
+      throw new AppError("You do not have access to this asset", 403);
+    }
   }
-};
 
-exports.deleteAsset = async (req, res) => {
-  try {
-    await prisma.asset.delete({
-      where: { id: Number(req.params.id) }
-    });
-    res.json({ message: "Asset deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+  return sendSuccess(res, { message: "Asset retrieved", data: asset });
+});
+
+exports.createAsset = asyncHandler(async (req, res) => {
+  const {
+    name,
+    assetTag,
+    serialNumber,
+    condition,
+    location,
+    acquisitionDate,
+    acquisitionCost,
+    photo,
+    isBookable,
+    departmentId,
+    categoryId
+  } = req.body;
+
+  const asset = await prisma.asset.create({
+    data: {
+      name,
+      assetTag,
+      serialNumber: serialNumber || null,
+      condition: condition || "Good",
+      location: location || null,
+      acquisitionDate: acquisitionDate ? new Date(acquisitionDate) : null,
+      acquisitionCost: acquisitionCost != null ? Number(acquisitionCost) : null,
+      photo: photo || null,
+      isBookable: isBookable || false,
+      departmentId: Number(departmentId),
+      categoryId: Number(categoryId)
+    }
+  });
+
+  return sendSuccess(res, { statusCode: 201, message: "Asset created", data: asset });
+});
+
+exports.updateAsset = asyncHandler(async (req, res) => {
+  const { name, status, condition, location, photo, isBookable, departmentId, categoryId } = req.body;
+  const data = {};
+
+  if (name) data.name = name;
+  if (status) data.status = status;
+  if (condition) data.condition = condition;
+  if (location !== undefined) data.location = location;
+  if (photo !== undefined) data.photo = photo;
+  if (isBookable !== undefined) data.isBookable = isBookable;
+  if (departmentId) data.departmentId = Number(departmentId);
+  if (categoryId) data.categoryId = Number(categoryId);
+
+  const asset = await prisma.asset.update({
+    where: { id: Number(req.params.id) },
+    data
+  });
+
+  return sendSuccess(res, { message: "Asset updated", data: asset });
+});
+
+exports.deleteAsset = asyncHandler(async (req, res) => {
+  await prisma.asset.delete({
+    where: { id: Number(req.params.id) }
+  });
+
+  return sendSuccess(res, { message: "Asset deleted successfully", data: null });
+});
