@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api/API.js';
 import { useAuth } from '../../context/AuthContext';
+import AiAction from '../../components/AiAction.jsx';
 
 const EmployeeHome = () => {
   const { user } = useAuth();
@@ -50,6 +51,28 @@ const EmployeeHome = () => {
           <p>Unable to load dashboard data.</p>
         </div>
       )}
+
+      <div className="mt-8 bg-white rounded-xl border border-gray-200 p-5">
+        <h2 className="text-xl font-semibold text-gray-800 mb-1">✨ AI Personal Insights</h2>
+        <p className="text-sm text-gray-500 mb-2">Get AI tips based on your assigned assets and activity.</p>
+        <AiAction
+          label="Get Personal Insights"
+          endpoint="/ai/dashboard"
+          payload={{
+            available: stats?.stats?.availableAssets || 0,
+            allocated: stats?.stats?.allocatedAssets || 0,
+            maintenance: stats?.stats?.underMaintenance || 0,
+            overdue: stats?.stats?.pendingMaintenance || 0,
+          }}
+          render={(d) => (
+            <div className="space-y-1">
+              <p><strong>Summary:</strong> {d.summary}</p>
+              <p><strong>Top Insight:</strong> {d.topInsight}</p>
+              <p><strong>Recommendation:</strong> {d.recommendation}</p>
+            </div>
+          )}
+        />
+      </div>
     </div>
   );
 };

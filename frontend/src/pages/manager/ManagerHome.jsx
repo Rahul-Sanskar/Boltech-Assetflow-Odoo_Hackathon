@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api/API.js';
 import { useAuth } from '../../context/AuthContext';
+import AiAction from '../../components/AiAction.jsx';
 
 const ManagerHome = () => {
   const { user } = useAuth();
@@ -51,6 +52,43 @@ const ManagerHome = () => {
           <p>Unable to load dashboard data.</p>
         </div>
       )}
+
+      <div className="mt-8 bg-white rounded-xl border border-gray-200 p-5">
+        <h2 className="text-xl font-semibold text-gray-800 mb-1">✨ AI Features</h2>
+        <p className="text-sm text-gray-500 mb-2">Use AI to get insights and suggestions.</p>
+
+        <AiAction
+          label="Department Insights"
+          endpoint="/ai/dashboard"
+          payload={{
+            available: stats?.stats?.availableAssets || 0,
+            allocated: stats?.stats?.allocatedAssets || 0,
+            maintenance: stats?.stats?.underMaintenance || 0,
+            overdue: stats?.stats?.pendingMaintenance || 0,
+          }}
+          render={(d) => (
+            <div className="space-y-1">
+              <p><strong>Summary:</strong> {d.summary}</p>
+              <p><strong>Top Insight:</strong> {d.topInsight}</p>
+              <p><strong>Biggest Risk:</strong> {d.biggestRisk}</p>
+              <p><strong>Recommendation:</strong> {d.recommendation}</p>
+            </div>
+          )}
+        />
+
+        <AiAction
+          label="Smart Booking Suggestions"
+          endpoint="/ai/booking"
+          payload={{ asset_name: 'Conference Room A', requested_by: user?.name || 'Manager', start_date: '2026-07-15', end_date: '2026-07-15' }}
+          render={(d) => (
+            <div className="space-y-1">
+              <p><strong>Available:</strong> {String(d.available)}</p>
+              <p><strong>Conflict:</strong> {String(d.conflict)}</p>
+              <p><strong>Suggestion:</strong> {d.suggestion}</p>
+            </div>
+          )}
+        />
+      </div>
     </div>
   );
 };

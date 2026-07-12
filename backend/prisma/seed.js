@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 
@@ -19,13 +20,16 @@ async function main() {
   await prisma.department.deleteMany({});
   await prisma.user.deleteMany({});
 
+  // Create initial departments
   const it = await prisma.department.create({ data: { name: "IT" } });
   const hr = await prisma.department.create({ data: { name: "HR" } });
   const facilities = await prisma.department.create({ data: { name: "Facilities" } });
 
+  // Create initial categories
   const laptops = await prisma.category.create({ data: { name: "Laptops" } });
   const monitors = await prisma.category.create({ data: { name: "Monitors" } });
 
+  // Create initial users with hashed passwords
   const adminPassword = await bcrypt.hash("adminpassword", 10);
   const managerPassword = await bcrypt.hash("managerpassword", 10);
   const employeePassword = await bcrypt.hash("employeepassword", 10);
@@ -35,8 +39,8 @@ async function main() {
       name: "Admin User",
       email: "admin@example.com",
       password: adminPassword,
-      role: "ADMIN"
-    }
+      role: "ADMIN",
+    },
   });
 
   const managerUser = await prisma.user.create({
@@ -44,8 +48,8 @@ async function main() {
       name: "Manager User",
       email: "manager@example.com",
       password: managerPassword,
-      role: "MANAGER"
-    }
+      role: "MANAGER",
+    },
   });
 
   const employeeUser = await prisma.user.create({
@@ -53,9 +57,10 @@ async function main() {
       name: "Employee User",
       email: "employee@example.com",
       password: employeePassword,
-      role: "EMPLOYEE"
-    }
+      role: "EMPLOYEE",
+    },
   });
+// Duplicate employee user creation removed.
 
   const adminEmployee = await prisma.employee.create({
     data: {

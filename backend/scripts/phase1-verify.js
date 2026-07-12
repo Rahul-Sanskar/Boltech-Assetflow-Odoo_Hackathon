@@ -318,7 +318,8 @@ async function main() {
     assert("Ownership", "Employee cannot read other maintenance", r.status === 403, `status=${r.status}`);
     r = await req(base, "PATCH", `/api/notifications/${mgrNotif.id}/read`, { token: employeeToken });
     assert("Ownership", "Employee cannot read/mark other notification", r.status === 403, `status=${r.status}`);
-    // Create allocation for manager on HR asset (return IT first if needed - separate alloc)
+    // Ensure no existing allocation for the same asset before creating manager allocation
+    await prisma.allocation.deleteMany({ where: { assetId: hrAsset.id } });
     const mgrAlloc = await prisma.allocation.create({
       data: { assetId: hrAsset.id, employeeId: managerEmp.id, status: "Allocated" }
     });
