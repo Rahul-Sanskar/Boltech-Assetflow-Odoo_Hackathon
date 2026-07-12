@@ -7,81 +7,80 @@ import Badge from '../../../components/ui/Badge';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import ConfirmDialog from '../../../components/ui/ConfirmDialog';
 import ErrorState from '../../../components/ui/ErrorState';
-import { FormField, FormInput, FormSelect, SearchInput } from '../../../components/ui/FormField';
+import { FormField, FormInput, FormTextarea, SearchInput } from '../../../components/ui/FormField';
 import { useToast } from '../../../context/ToastContext';
-import { getErrorMessage, statusBadgeVariant } from '../../../utils/apiError';
+import { getErrorMessage } from '../../../utils/apiError';
 import { Trash2, Pencil } from 'lucide-react';
 
-const DepartmentList = () => {
+const CategoryList = () => {
   const { success, error: toastError } = useToast();
-  const [departments, setDepartments] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', status: 'Active' });
+  const [form, setForm] = useState({ name: '', customFields: '' });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
 
-  const fetchDepartments = () => {
+  const fetchCategories = () => {
     setLoading(true);
     setError(null);
-    API.get('/departments')
-      .then((res) => setDepartments(res.data.data || []))
+    API.get('/categories')
+      .then((res) => setCategories(res.data.data || []))
       .catch((err) => {
-        setDepartments([]);
-        setError(getErrorMessage(err, 'Failed to load departments'));
+        setCategories([]);
+        setError(getErrorMessage(err, 'Failed to load categories'));
       })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchDepartments();
+    fetchCategories();
   }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return departments;
-    return departments.filter(
-      (d) => d.name?.toLowerCase().includes(q) || d.head?.name?.toLowerCase().includes(q)
-    );
-  }, [departments, search]);
+    if (!q) return categories;
+    return categories.filter((c) => c.name?.toLowerCase().includes(q));
+  }, [categories, search]);
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', status: 'Active' });
+    setForm({ name: '', customFields: '' });
     setShowForm(true);
   };
 
   const openEdit = (row) => {
     setEditing(row);
-    setForm({ name: row.name || '', status: row.status || 'Active' });
+    setForm({ name: row.name || '', customFields: row.customFields || '' });
     setShowForm(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      toastError('Department name is required');
+      toastError('Category name is required');
       return;
     }
     setSaving(true);
     try {
+      const payload = {
+        name: form.name.trim(),
+        customFields: form.customFields.trim() || null,
+      };
       if (editing) {
-        await API.patch(`/departments/${editing.id}`, {
-          name: form.name.trim(),
-          status: form.status,
-        });
-        success('Department updated');
+        await API.patch(`/categories/${editing.id}`, payload);
+        success('Category updated');
       } else {
-        await API.post('/departments', { name: form.name.trim() });
-        success('Department created');
+        await API.post('/categories', payload);
+        success('Category created');
       }
       setShowForm(false);
-      fetchDepartments();
+      fetchCategories();
     } catch (err) {
-      toastError(getErrorMessage(err, 'Failed to save department'));
+      toastError(getErrorMessage(err, 'Failed to save category'));
     } finally {
       setSaving(false);
     }
@@ -91,12 +90,12 @@ const DepartmentList = () => {
     if (!deleteTarget) return;
     setSaving(true);
     try {
-      await API.delete(`/departments/${deleteTarget.id}`);
-      success('Department deleted');
+      await API.delete(`/categories/${deleteTarget.id}`);
+      success('Category deleted');
       setDeleteTarget(null);
-      fetchDepartments();
+      fetchCategories();
     } catch (err) {
-      toastError(getErrorMessage(err, 'Failed to delete department'));
+      toastError(getErrorMessage(err, 'Failed to delete category'));
     } finally {
       setSaving(false);
     }
@@ -104,32 +103,31 @@ const DepartmentList = () => {
 
   const columns = [
     {
-      label: 'Department',
+      label: 'Category',
       key: 'name',
       render: (row) => (
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 font-bold text-xs">
+          <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-600 font-bold text-xs">
             {row.name?.charAt(0)}
           </div>
-          <span className="font-medium">{row.name}</span>
+          <div>
+            <p className="font-medium">{row.name}</p>
+            {row.customFields && (
+              <p className="text-xs text-[var(--text-muted)] max-w-[220px] truncate">{row.customFields}</p>
+            )}
+          </div>
         </div>
       ),
     },
-    { label: 'Head', key: 'head', render: (row) => row.head?.name || '—' },
-    {
-      label: 'Employees',
-      key: '_count',
-      render: (row) => <Badge variant="info">{row._count?.employees || 0}</Badge>,
-    },
     {
       label: 'Assets',
-      key: 'assets',
-      render: (row) => <Badge variant="purple">{row._count?.assets || 0}</Badge>,
+      key: '_count',
+      render: (row) => <Badge variant="info">{row._count?.assets || 0}</Badge>,
     },
     {
-      label: 'Status',
-      key: 'status',
-      render: (row) => <Badge variant={statusBadgeVariant(row.status)}>{row.status}</Badge>,
+      label: 'Created',
+      key: 'createdAt',
+      render: (row) => (row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '—'),
     },
     {
       label: '',
@@ -158,43 +156,43 @@ const DepartmentList = () => {
   ];
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorState message={error} onRetry={fetchDepartments} />;
+  if (error) return <ErrorState message={error} onRetry={fetchCategories} />;
 
   return (
     <div>
       <PageHeader
-        title="Departments"
-        subtitle={`${filtered.length} of ${departments.length} departments`}
-        actionLabel="Add Department"
+        title="Categories"
+        subtitle={`${filtered.length} of ${categories.length} categories`}
+        actionLabel="Add Category"
         onAction={openCreate}
       >
-        <SearchInput value={search} onChange={setSearch} placeholder="Search departments…" />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search categories…" />
       </PageHeader>
 
-      <DataTable columns={columns} data={filtered} emptyMessage="No departments found." />
+      <DataTable columns={columns} data={filtered} emptyMessage="No categories found. Create your first category." />
 
       <Modal
         isOpen={showForm}
         onClose={() => !saving && setShowForm(false)}
-        title={editing ? 'Edit Department' : 'Create Department'}
+        title={editing ? 'Edit Category' : 'Create Category'}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Department Name *">
+          <FormField label="Category Name *">
             <FormInput
               required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="e.g. Engineering"
+              placeholder="e.g. Laptops"
             />
           </FormField>
-          {editing && (
-            <FormField label="Status">
-              <FormSelect value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </FormSelect>
-            </FormField>
-          )}
+          <FormField label="Custom Fields (optional)">
+            <FormTextarea
+              rows={3}
+              value={form.customFields}
+              onChange={(e) => setForm({ ...form, customFields: e.target.value })}
+              placeholder='Optional metadata, e.g. {"warrantyMonths":12}'
+            />
+          </FormField>
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
@@ -219,8 +217,8 @@ const DepartmentList = () => {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title="Delete department"
-        message={`Delete "${deleteTarget?.name}"? Departments with employees or assets cannot be deleted.`}
+        title="Delete category"
+        message={`Delete "${deleteTarget?.name}"? Categories with linked assets cannot be deleted.`}
         confirmLabel="Delete"
         loading={saving}
       />
@@ -228,4 +226,4 @@ const DepartmentList = () => {
   );
 };
 
-export default DepartmentList;
+export default CategoryList;
