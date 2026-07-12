@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "verify:phase2": "node scripts/phase2-verify.js"
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",

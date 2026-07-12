@@ -3,6 +3,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { sendSuccess } = require("../utils/response");
 const { maintenanceListScope, isManager } = require("../utils/scope");
+const maintenanceService = require("../services/maintenance.service");
 
 exports.getMaintenanceRequests = asyncHandler(async (req, res) => {
   const { status, priority } = req.query;
@@ -40,23 +41,13 @@ exports.getMaintenanceById = asyncHandler(async (req, res) => {
 exports.createMaintenance = asyncHandler(async (req, res) => {
   const { assetId, requestedById, description, priority, photo } = req.body;
 
-  const result = await prisma.$transaction(async (tx) => {
-    const request = await tx.maintenanceRequest.create({
-      data: {
-        assetId: Number(assetId),
-        requestedById: Number(requestedById),
-        description,
-        priority: priority || "Medium",
-        photo: photo || null
-      }
-    });
-
-    await tx.asset.update({
-      where: { id: Number(assetId) },
-      data: { status: "Under Maintenance" }
-    });
-
-    return request;
+  const result = await maintenanceService.createMaintenance({
+    assetId,
+    requestedById,
+    description,
+    priority,
+    photo,
+    actorUserId: req.user.id
   });
 
   return sendSuccess(res, { statusCode: 201, message: "Maintenance request created", data: result });
@@ -64,7 +55,6 @@ exports.createMaintenance = asyncHandler(async (req, res) => {
 
 exports.updateMaintenance = asyncHandler(async (req, res) => {
   const { status, technicianId, resolvedDate } = req.body;
-  const data = {};
 
   const request = await prisma.maintenanceRequest.findUnique({
     where: { id: Number(req.params.id) },
@@ -84,21 +74,12 @@ exports.updateMaintenance = asyncHandler(async (req, res) => {
     }
   }
 
-  if (status) data.status = status;
-  if (technicianId) data.technicianId = Number(technicianId);
-  if (resolvedDate) data.resolvedDate = new Date(resolvedDate);
-
-  if (status === "Resolved") {
-    data.resolvedDate = new Date();
-    await prisma.asset.update({
-      where: { id: request.assetId },
-      data: { status: "Available" }
-    });
-  }
-
-  const updated = await prisma.maintenanceRequest.update({
-    where: { id: request.id },
-    data
+  const updated = await maintenanceService.updateMaintenance({
+    requestId: request.id,
+    status,
+    technicianId,
+    resolvedDate,
+    actorUserId: req.user.id
   });
 
   return sendSuccess(res, { message: "Maintenance request updated", data: updated });
