@@ -23,55 +23,64 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  employee             Employee?
-  notifications        Notification[]
-  activityLogs         ActivityLog[]
-  auditAssignments     AuditAssignment[]
-  maintenanceAssigned  MaintenanceRequest[] @relation("TechnicianAssigned")
+  employee            Employee?
+  notifications       Notification[]
+  activityLogs        ActivityLog[]
+  auditAssignments    AuditAssignment[]
+  maintenanceAssigned MaintenanceRequest[] @relation("TechnicianAssigned")
+
+  @@index([role])
+  @@index([status])
 }
 
 model Department {
-  id               Int          @id @default(autoincrement())
-  name             String       @unique
-  status           String       @default("Active")
-  parentId         Int?
-  parent           Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id])
-  children         Department[] @relation("DepartmentHierarchy")
-  headId           Int?         @unique
-  head             Employee?    @relation("DepartmentHead", fields: [headId], references: [id])
-  employees        Employee[]   @relation("EmployeeDepartment")
-  assets           Asset[]
-  auditCycles      AuditCycle[]
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  id        Int          @id @default(autoincrement())
+  name      String       @unique
+  status    String       @default("Active")
+  parentId  Int?
+  parent    Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children  Department[] @relation("DepartmentHierarchy")
+  headId    Int?         @unique
+  head      Employee?    @relation("DepartmentHead", fields: [headId], references: [id])
+  employees Employee[]   @relation("EmployeeDepartment")
+  assets    Asset[]
+  auditCycles AuditCycle[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([parentId])
+  @@index([status])
 }
 
 model Category {
-  id             Int      @id @default(autoincrement())
-  name           String   @unique
-  customFields   String?
-  assets         Asset[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  customFields String?
+  assets       Asset[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Employee {
-  id                    Int                  @id @default(autoincrement())
-  name                  String
-  email                 String               @unique
-  status                String               @default("Active")
-  departmentId          Int
-  department            Department           @relation("EmployeeDepartment", fields: [departmentId], references: [id])
-  userId                Int?                 @unique
-  user                  User?                @relation(fields: [userId], references: [id])
-  headOfDepartment      Department?          @relation("DepartmentHead")
-  allocations           Allocation[]
-  heldAssets            Asset[]              @relation("CurrentHolder")
-  transfersRequested    TransferRequest[]    @relation("TransferRequester")
-  bookings              Booking[]
-  maintenanceRequests   MaintenanceRequest[] @relation("MaintenanceRequester")
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  email               String               @unique
+  status              String               @default("Active")
+  departmentId        Int
+  department          Department           @relation("EmployeeDepartment", fields: [departmentId], references: [id])
+  userId              Int?                 @unique
+  user                User?                @relation(fields: [userId], references: [id])
+  headOfDepartment    Department?          @relation("DepartmentHead")
+  allocations         Allocation[]
+  heldAssets          Asset[]              @relation("CurrentHolder")
+  transfersRequested  TransferRequest[]    @relation("TransferRequester")
+  bookings            Booking[]
+  maintenanceRequests MaintenanceRequest[] @relation("MaintenanceRequester")
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([departmentId])
+  @@index([status])
 }
 
 model Asset {
@@ -99,6 +108,13 @@ model Asset {
   auditItems          AuditItem[]
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+
+  @@index([status])
+  @@index([departmentId])
+  @@index([categoryId])
+  @@index([employeeId])
+  @@index([departmentId, status])
+  @@index([isBookable])
 }
 
 model Allocation {
@@ -114,32 +130,45 @@ model Allocation {
   status         String    @default("Allocated")
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  @@index([assetId, status])
+  @@index([employeeId, status])
+  @@index([status])
 }
 
 model TransferRequest {
-  id              Int       @id @default(autoincrement())
-  assetId         Int
-  asset           Asset     @relation(fields: [assetId], references: [id])
-  requestedById   Int
-  requestedBy     Employee  @relation("TransferRequester", fields: [requestedById], references: [id])
-  status          String    @default("Requested")
-  approvedDate    DateTime?
-  rejectedReason  String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             Int       @id @default(autoincrement())
+  assetId        Int
+  asset          Asset     @relation(fields: [assetId], references: [id])
+  requestedById  Int
+  requestedBy    Employee  @relation("TransferRequester", fields: [requestedById], references: [id])
+  status         String    @default("Requested")
+  approvedDate   DateTime?
+  rejectedReason String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([assetId, status])
+  @@index([requestedById, status])
+  @@index([status])
 }
 
 model Booking {
-  id          Int      @id @default(autoincrement())
-  assetId     Int
-  asset       Asset    @relation(fields: [assetId], references: [id])
-  employeeId  Int
-  employee    Employee @relation(fields: [employeeId], references: [id])
-  startTime   DateTime
-  endTime     DateTime
-  status      String   @default("Upcoming")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  assetId    Int
+  asset      Asset    @relation(fields: [assetId], references: [id])
+  employeeId Int
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  startTime  DateTime
+  endTime    DateTime
+  status     String   @default("Upcoming")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([assetId, status])
+  @@index([assetId, startTime, endTime])
+  @@index([employeeId, status])
+  @@index([status])
 }
 
 model MaintenanceRequest {
@@ -157,22 +186,32 @@ model MaintenanceRequest {
   resolvedDate    DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  @@index([assetId, status])
+  @@index([requestedById])
+  @@index([technicianId])
+  @@index([status])
+  @@index([priority])
 }
 
 model AuditCycle {
-  id            Int               @id @default(autoincrement())
-  name          String
-  scope         String
-  departmentId  Int?
-  department    Department?       @relation(fields: [departmentId], references: [id])
-  location      String?
-  startDate     DateTime
-  endDate       DateTime
-  status        String            @default("Open")
-  assignments   AuditAssignment[]
-  items         AuditItem[]
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id           Int               @id @default(autoincrement())
+  name         String
+  scope        String
+  departmentId Int?
+  department   Department?       @relation(fields: [departmentId], references: [id])
+  location     String?
+  startDate    DateTime
+  endDate      DateTime
+  status       String            @default("Open")
+  assignments  AuditAssignment[]
+  items        AuditItem[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([departmentId])
+  @@index([status])
+  @@index([startDate])
 }
 
 model AuditAssignment {
@@ -182,6 +221,9 @@ model AuditAssignment {
   auditorId    Int
   auditor      User       @relation(fields: [auditorId], references: [id])
   createdAt    DateTime   @default(now())
+
+  @@unique([auditCycleId, auditorId])
+  @@index([auditorId])
 }
 
 model AuditItem {
@@ -194,6 +236,10 @@ model AuditItem {
   notes        String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  @@unique([auditCycleId, assetId])
+  @@index([assetId])
+  @@index([result])
 }
 
 model Notification {
@@ -204,6 +250,9 @@ model Notification {
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }
 
 model ActivityLog {
@@ -215,4 +264,8 @@ model ActivityLog {
   entityId  Int
   details   String?
   createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
+  @@index([createdAt])
 }

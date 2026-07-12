@@ -4,8 +4,7 @@ const prisma = require("../config/db");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { sendSuccess } = require("../utils/response");
-
-const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+const { getConfig } = require("../config/env");
 
 exports.signup = asyncHandler(async (req, res) => {
   const { name, email, password, departmentId } = req.body;
@@ -46,7 +45,7 @@ exports.signup = asyncHandler(async (req, res) => {
     return { user, employee };
   });
 
-  const token = jwt.sign({ id: result.user.id, role: result.user.role }, JWT_SECRET, {
+  const token = jwt.sign({ id: result.user.id, role: result.user.role }, getConfig().jwtSecret, {
     expiresIn: "24h"
   });
 
@@ -80,7 +79,7 @@ exports.login = asyncHandler(async (req, res) => {
     throw new AppError("Invalid credentials", 401);
   }
 
-  const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
+  const token = jwt.sign({ id: user.id, role: user.role }, getConfig().jwtSecret, {
     expiresIn: "24h"
   });
 
