@@ -1,8 +1,11 @@
 const express = require("express");
+const { getEmployees, getEmployeeById, createEmployee, updateEmployee, deleteEmployee } = require("../controllers/employee.controller");
 const router = express.Router();
 
-router.get("/", (req, res) => {
-  res.json({ message: "Employees endpoint stub" });
-});
+router.get("/", getEmployees);
+router.get("/:id", getEmployeeById);
+router.post("/", createEmployee);
+router.patch("/:id", updateEmployee);
+router.delete("/:id", deleteEmployee);
 
 module.exports = router;
