@@ -23,6 +23,15 @@ import MaintenanceList from "./pages/admin/maintenance/MaintenanceList";
 import AdminSettings from "./pages/admin/settings/AdminSettings";
 
 import ManagerHome from "./pages/manager/ManagerHome";
+import ManagerAssets from "./pages/manager/assets/ManagerAssets";
+import ManagerAllocations from "./pages/manager/allocations/ManagerAllocations";
+import ManagerTransfers from "./pages/manager/transfers/ManagerTransfers";
+import ManagerMaintenance from "./pages/manager/maintenance/ManagerMaintenance";
+import ManagerBookings from "./pages/manager/bookings/ManagerBookings";
+import ManagerAudits from "./pages/manager/audits/ManagerAudits";
+import ManagerReports from "./pages/manager/reports/ManagerReports";
+import ManagerNotifications from "./pages/manager/notifications/ManagerNotifications";
+
 import EmployeeHome from "./pages/employee/EmployeeHome";
 
 const RootRedirect = () => {
@@ -62,6 +71,14 @@ const App = () => {
 
       <Route path="/manager" element={<ManagerGuard><ManagerLayout /></ManagerGuard>}>
         <Route path="home" element={<ManagerHome />} />
+        <Route path="assets" element={<ManagerAssets />} />
+        <Route path="allocations" element={<ManagerAllocations />} />
+        <Route path="transfers" element={<ManagerTransfers />} />
+        <Route path="maintenance" element={<ManagerMaintenance />} />
+        <Route path="bookings" element={<ManagerBookings />} />
+        <Route path="audits" element={<ManagerAudits />} />
+        <Route path="reports" element={<ManagerReports />} />
+        <Route path="notifications" element={<ManagerNotifications />} />
       </Route>
 
       <Route path="/employee" element={<EmployeeGuard><EmployeeLayout /></EmployeeGuard>}>
