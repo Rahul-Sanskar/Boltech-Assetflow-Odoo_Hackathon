@@ -6,8 +6,8 @@ export default function ManagerGuard({ children }) {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  if (user.role === 'manager') {
-    return <Navigate to="/manager/home" replace />;
+  if (user.role !== 'manager' && user.role !== 'admin') {
+    return <Navigate to="/" replace />;
   }
   return children;
 }

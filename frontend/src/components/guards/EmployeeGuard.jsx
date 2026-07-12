@@ -6,8 +6,5 @@ export default function EmployeeGuard({ children }) {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  if (user.role === 'employee') {
-    return <Navigate to="/employee/home" replace />;
-  }
   return children;
 }

@@ -20,7 +20,7 @@ const Login = () => {
       await login(email, password);
       navigate('/'); // RootRedirect will handle the role-based redirection
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid email or password');
+      setError(err.response?.data?.message || err.message || 'Invalid email or password');
     } finally {
       setIsLoading(false);
     }

@@ -6,17 +6,31 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
 
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    try {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser && savedUser !== 'undefined') {
+        return JSON.parse(savedUser);
+      }
+    } catch (e) {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    }
+    return null;
   });
 
   const login = async (email, password) => {
     const response = await API.post('/auth/login', { email, password });
-    
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-    
-    setUser(response.data.user);
+    const { user: userData, token } = response.data.data;
+    const normalizedUser = { ...userData, role: userData.role.toLowerCase() };
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(normalizedUser));
+    setUser(normalizedUser);
+  };
+
+  const register = async (name, email, password, departmentId) => {
+    const response = await API.post('/auth/signup', { name, email, password, departmentId });
+    return response.data;
   };
 
   const logout = () => {
@@ -26,7 +40,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -7,8 +7,8 @@ export default function PublicGuard({ children }) {
     if (user.role === 'admin') {
       return <Navigate to="/admin/home" replace />;
     }
-    if(user.role === 'manager'){
-      return <Navigate to="/admin/home" replace />;
+    if (user.role === 'manager') {
+      return <Navigate to="/manager/home" replace />;
     }
     return <Navigate to="/employee/home" replace />;
   }

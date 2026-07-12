@@ -60,11 +60,11 @@ const App = () => {
 
       {/* manager */}
       <Route path="/manager" element={<ManagerGuard><ManagerLayout/></ManagerGuard>}>
-        <Route path="home" element={<AdminHome/>} />
+        <Route path="home" element={<ManagerHome/>} />
       </Route>
       {/* employee */}
       <Route path="/employee" element={<EmployeeGuard><EmployeeLayout/></EmployeeGuard>}>
-        <Route path="home" element={<AdminHome/>} />
+        <Route path="home" element={<EmployeeHome/>} />
       </Route>
     </Routes>
   );

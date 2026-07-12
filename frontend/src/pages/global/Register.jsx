@@ -1,15 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import API from '../../api/API.js'; 
+import { useAuth } from '../../context/AuthContext';
+import API from '../../api/API.js';
 
 const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
+  const [departments, setDepartments] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const { register } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    API.get('/departments')
+      .then((res) => {
+        const depts = res.data.data || res.data;
+        setDepartments(Array.isArray(depts) ? depts : []);
+      })
+      .catch(() => setDepartments([]));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +30,7 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      await API.post('/auth/register', { name, email, password });
+      await register(name, email, password, Number(departmentId));
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
@@ -86,6 +99,24 @@ const Register = () => {
               className="w-full px-4 py-2.5 rounded-lg bg-[var(--bg-base)] border border-[var(--border-light)] focus:border-[var(--border-focus)] focus:outline-none transition-colors"
               placeholder="••••••••"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1.5" htmlFor="department">
+              Department
+            </label>
+            <select
+              id="department"
+              required
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-lg bg-[var(--bg-base)] border border-[var(--border-light)] focus:border-[var(--border-focus)] focus:outline-none transition-colors"
+            >
+              <option value="">Select a department</option>
+              {departments.map((dept) => (
+                <option key={dept.id} value={dept.id}>{dept.name}</option>
+              ))}
+            </select>
           </div>
 
           <button
