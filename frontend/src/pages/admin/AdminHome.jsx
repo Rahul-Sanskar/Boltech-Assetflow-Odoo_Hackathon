@@ -185,6 +185,35 @@ const AdminHome = () => {
           ))}
         </Panel>
 
+<<<<<<< HEAD
+      {!stats && (
+        <div className="text-center text-gray-500 py-12">
+          <p>Unable to load dashboard data.</p>
+        </div>
+      )}
+
+      <div className="mt-8 bg-white rounded-xl border border-gray-200 p-5">
+        <h2 className="text-xl font-semibold text-gray-800 mb-1">✨ AI Business Insights</h2>
+        <p className="text-sm text-gray-500 mb-2">Get an AI-generated summary of your organization's asset health.</p>
+        <AiAction
+          label="Generate Business Insights"
+          endpoint="/ai/dashboard"
+          payload={{
+            available: stats?.stats?.availableAssets || 0,
+            allocated: stats?.stats?.allocatedAssets || 0,
+            maintenance: stats?.stats?.underMaintenance || 0,
+            overdue: stats?.stats?.pendingMaintenance || 0,
+          }}
+          render={(d) => (
+            <div className="space-y-1">
+              <p><strong>Summary:</strong> {d.summary}</p>
+              <p><strong>Top Insight:</strong> {d.topInsight}</p>
+              <p><strong>Biggest Risk:</strong> {d.biggestRisk}</p>
+              <p><strong>Recommendation:</strong> {d.recommendation}</p>
+            </div>
+          )}
+        />
+=======
         {/* Pending Transfers */}
         <Panel
           title="Pending Transfers"
@@ -348,6 +377,7 @@ const AdminHome = () => {
             />
           ))}
         </Panel>
+>>>>>>> main
       </div>
     </div>
   );
