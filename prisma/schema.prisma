@@ -1,0 +1,212 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("employee")
+  status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employee             Employee?
+  notifications        Notification[]
+  activityLogs         ActivityLog[]
+  auditAssignments     AuditAssignment[]
+  maintenanceAssigned  MaintenanceRequest[] @relation("TechnicianAssigned")
+}
+
+model Department {
+  id               Int          @id @default(autoincrement())
+  name             String       @unique
+  status           String       @default("Active")
+  parentId         Int?
+  parent           Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children         Department[] @relation("DepartmentHierarchy")
+  headId           Int?         @unique
+  head             Employee?    @relation("DepartmentHead", fields: [headId], references: [id])
+  employees        Employee[]   @relation("EmployeeDepartment")
+  assets           Asset[]
+  auditCycles      AuditCycle[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model Category {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique
+  customFields   String?
+  assets         Asset[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Employee {
+  id                    Int                  @id @default(autoincrement())
+  name                  String
+  email                 String               @unique
+  status                String               @default("Active")
+  departmentId          Int
+  department            Department           @relation("EmployeeDepartment", fields: [departmentId], references: [id])
+  userId                Int?                 @unique
+  user                  User?                @relation(fields: [userId], references: [id])
+  headOfDepartment      Department?          @relation("DepartmentHead")
+  allocations           Allocation[]
+  heldAssets            Asset[]              @relation("CurrentHolder")
+  transfersRequested    TransferRequest[]    @relation("TransferRequester")
+  bookings              Booking[]
+  maintenanceRequests   MaintenanceRequest[] @relation("MaintenanceRequester")
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+}
+
+model Asset {
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  assetTag            String               @unique
+  serialNumber        String?              @unique
+  status              String               @default("Available")
+  condition           String               @default("Good")
+  location            String?
+  acquisitionDate     DateTime?
+  acquisitionCost     Float?
+  photo               String?
+  isBookable          Boolean              @default(false)
+  departmentId        Int
+  department          Department           @relation(fields: [departmentId], references: [id])
+  categoryId          Int
+  category            Category             @relation(fields: [categoryId], references: [id])
+  employeeId          Int?
+  employee            Employee?            @relation("CurrentHolder", fields: [employeeId], references: [id])
+  allocations         Allocation[]
+  transferRequests    TransferRequest[]
+  bookings            Booking[]
+  maintenanceRequests MaintenanceRequest[]
+  auditItems          AuditItem[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+model Allocation {
+  id             Int       @id @default(autoincrement())
+  assetId        Int
+  asset          Asset     @relation(fields: [assetId], references: [id])
+  employeeId     Int
+  employee       Employee  @relation(fields: [employeeId], references: [id])
+  allocatedDate  DateTime  @default(now())
+  expectedReturn DateTime?
+  returnedDate   DateTime?
+  returnNotes    String?
+  status         String    @default("Allocated")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model TransferRequest {
+  id              Int       @id @default(autoincrement())
+  assetId         Int
+  asset           Asset     @relation(fields: [assetId], references: [id])
+  requestedById   Int
+  requestedBy     Employee  @relation("TransferRequester", fields: [requestedById], references: [id])
+  status          String    @default("Requested")
+  approvedDate    DateTime?
+  rejectedReason  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Booking {
+  id          Int      @id @default(autoincrement())
+  assetId     Int
+  asset       Asset    @relation(fields: [assetId], references: [id])
+  employeeId  Int
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  startTime   DateTime
+  endTime     DateTime
+  status      String   @default("Upcoming")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MaintenanceRequest {
+  id              Int       @id @default(autoincrement())
+  assetId         Int
+  asset           Asset     @relation(fields: [assetId], references: [id])
+  requestedById   Int
+  requestedBy     Employee  @relation("MaintenanceRequester", fields: [requestedById], references: [id])
+  description     String
+  priority        String    @default("Medium")
+  photo           String?
+  status          String    @default("Pending")
+  technicianId    Int?
+  technician      User?     @relation("TechnicianAssigned", fields: [technicianId], references: [id])
+  resolvedDate    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model AuditCycle {
+  id            Int               @id @default(autoincrement())
+  name          String
+  scope         String
+  departmentId  Int?
+  department    Department?       @relation(fields: [departmentId], references: [id])
+  location      String?
+  startDate     DateTime
+  endDate       DateTime
+  status        String            @default("Open")
+  assignments   AuditAssignment[]
+  items         AuditItem[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model AuditAssignment {
+  id           Int        @id @default(autoincrement())
+  auditCycleId Int
+  auditCycle   AuditCycle @relation(fields: [auditCycleId], references: [id])
+  auditorId    Int
+  auditor      User       @relation(fields: [auditorId], references: [id])
+  createdAt    DateTime   @default(now())
+}
+
+model AuditItem {
+  id           Int        @id @default(autoincrement())
+  auditCycleId Int
+  auditCycle   AuditCycle @relation(fields: [auditCycleId], references: [id])
+  assetId      Int
+  asset        Asset      @relation(fields: [assetId], references: [id])
+  result       String?
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  Int
+  details   String?
+  createdAt DateTime @default(now())
+}
