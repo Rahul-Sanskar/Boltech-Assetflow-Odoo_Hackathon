@@ -1,17 +1,17 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-export default function UserGuard({ children }) {
+export default function ManagerGuard({ children }) {
   const { user } = useAuth();
 
-  // Is anyone logged in at all?
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  // Is the logged-in person an Admin? If yes, kick them back to their Admin Dashboard.
-  if (user.role === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />;
+
+  if (user.role !== 'MANAGER') {
+    if (user.role === 'ADMIN') return <Navigate to="/admin" replace />;
+    return <Navigate to="/employee" replace />;
   }
-  // They are a standard user. Render the User page.
+
   return children;
 }
