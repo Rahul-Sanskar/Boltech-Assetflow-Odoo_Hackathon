@@ -18,7 +18,11 @@ app.get("/api/health", async (req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     return res.status(200).json({ success: true, message: "Backend and database are fully connected" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Database connection failed", error: error.message });
+    const detail =
+      process.env.NODE_ENV === "production"
+        ? "Database unavailable"
+        : error.message;
+    return res.status(500).json({ success: false, message: "Database connection failed", error: detail });
   }
 });
 

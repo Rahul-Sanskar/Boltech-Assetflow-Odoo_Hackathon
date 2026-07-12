@@ -127,18 +127,42 @@ exports.updateAuditItem = asyncHandler(async (req, res) => {
 exports.updateAuditCycle = asyncHandler(async (req, res) => {
   const { status } = req.body;
 
-  if (status === "Closed") {
-    const cycle = await assetService.closeAuditCycle({
-      cycleId: Number(req.params.id),
-      actorUserId: req.user.id
+  const result = await prisma.$transaction(async (tx) => {
+    const cycle = await tx.auditCycle.update({
+      where: { id: Number(req.params.id) },
+      data: { status }
     });
-    return sendSuccess(res, { message: "Audit cycle updated", data: cycle });
-  }
 
-  const cycle = await prisma.auditCycle.update({
-    where: { id: Number(req.params.id) },
-    data: { status }
+    if (status === "Closed") {
+      const items = await tx.auditItem.findMany({
+        where: { auditCycleId: Number(req.params.id) }
+      });
+
+      const missingAssetIds = items
+        .filter((item) => item.result === "Missing")
+        .map((item) => item.assetId);
+
+      if (missingAssetIds.length > 0) {
+        await tx.asset.updateMany({
+          where: { id: { in: missingAssetIds } },
+          data: { status: "Lost" }
+        });
+      }
+
+      const damagedAssetIds = items
+        .filter((item) => item.result === "Damaged")
+        .map((item) => item.assetId);
+
+      if (damagedAssetIds.length > 0) {
+        await tx.asset.updateMany({
+          where: { id: { in: damagedAssetIds } },
+          data: { condition: "Damaged" }
+        });
+      }
+    }
+
+    return cycle;
   });
 
-  return sendSuccess(res, { message: "Audit cycle updated", data: cycle });
+  return sendSuccess(res, { message: "Audit cycle updated", data: result });
 });
