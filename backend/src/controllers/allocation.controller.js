@@ -3,12 +3,17 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { sendSuccess } = require("../utils/response");
 const { allocationListScope, isAdmin, isManager } = require("../utils/scope");
+const allocationService = require("../services/allocation.service");
 
 exports.getAllocations = asyncHandler(async (req, res) => {
   const allocations = await prisma.allocation.findMany({
     where: allocationListScope(req.user),
     include: {
-      asset: { select: { id: true, name: true, assetTag: true } },
+      asset: {
+        include: {
+          category: { select: { id: true, name: true } }
+        }
+      },
       employee: { select: { id: true, name: true } }
     }
   });
@@ -33,8 +38,8 @@ exports.allocateAsset = asyncHandler(async (req, res) => {
   const { assetId, employeeId, expectedReturn } = req.body;
 
   const asset = await prisma.asset.findUnique({ where: { id: Number(assetId) } });
-  if (!asset || asset.status !== "Available") {
-    throw new AppError("Asset is not available for allocation", 400);
+  if (!asset) {
+    throw new AppError("Asset not found", 404);
   }
 
   if (isManager(req.user) && asset.departmentId !== req.user.departmentId) {
@@ -50,21 +55,11 @@ exports.allocateAsset = asyncHandler(async (req, res) => {
     throw new AppError("Employee is outside your department scope", 403);
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const allocation = await tx.allocation.create({
-      data: {
-        assetId: Number(assetId),
-        employeeId: Number(employeeId),
-        expectedReturn: expectedReturn ? new Date(expectedReturn) : null
-      }
-    });
-
-    await tx.asset.update({
-      where: { id: Number(assetId) },
-      data: { status: "Allocated", employeeId: Number(employeeId) }
-    });
-
-    return allocation;
+  const result = await allocationService.allocateAsset({
+    assetId,
+    employeeId,
+    expectedReturn,
+    actorUserId: req.user.id
   });
 
   return sendSuccess(res, { statusCode: 201, message: "Asset allocated", data: result });
@@ -78,8 +73,8 @@ exports.returnAsset = asyncHandler(async (req, res) => {
     include: { asset: true, employee: true }
   });
 
-  if (!allocation || allocation.status !== "Allocated") {
-    throw new AppError("Allocation not found or already returned", 400);
+  if (!allocation) {
+    throw new AppError("Allocation not found", 404);
   }
 
   if (!isAdmin(req.user)) {
@@ -95,22 +90,10 @@ exports.returnAsset = asyncHandler(async (req, res) => {
     }
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const updated = await tx.allocation.update({
-      where: { id: allocation.id },
-      data: {
-        status: "Returned",
-        returnedDate: new Date(),
-        returnNotes: returnNotes || null
-      }
-    });
-
-    await tx.asset.update({
-      where: { id: allocation.assetId },
-      data: { status: "Available", employeeId: null }
-    });
-
-    return updated;
+  const result = await allocationService.returnAsset({
+    allocationId: allocation.id,
+    returnNotes,
+    actorUserId: req.user.id
   });
 
   return sendSuccess(res, { message: "Asset returned", data: result });

@@ -1,63 +1,121 @@
-import { Link, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Package,
+  Calendar,
+  Wrench,
+  Bell,
+  LogOut,
+  Boxes,
+  X,
+} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
-const EmployeeSidebar = ({ isMobileOpen, isDesktopCollapsed, closeMobile }) => {
-  const location = useLocation();
-  const isActive = (path) => location.pathname === path;
+const navItems = [
+  { name: 'Dashboard', path: '/employee/home', icon: LayoutDashboard },
+  { name: 'My Assets', path: '/employee/my-assets', icon: Package },
+  { name: 'Bookings', path: '/employee/bookings', icon: Calendar },
+  { name: 'Maintenance', path: '/employee/maintenance', icon: Wrench },
+  { name: 'Notifications', path: '/employee/notifications', icon: Bell },
+];
 
-  const NavItem = ({ to, iconPath, label }) => (
-    <li>
-      <Link
-        to={to}
-        onClick={closeMobile}
-        className={`flex items-center px-4 py-3 rounded-lg transition-colors group relative
-          ${isActive(to) ? 'bg-[var(--brand-primary)] text-white' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)]'}
-        `}
-      >
-        <svg 
-          className={`w-6 h-6 flex-shrink-0 ${isActive(to) ? 'text-white' : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)]'}`} 
-          fill="none" viewBox="0 0 24 24" stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={iconPath} />
-        </svg>
-        <span 
-          className={`ml-3 whitespace-nowrap transition-opacity duration-200
-            ${isDesktopCollapsed && !isMobileOpen ? 'opacity-0 md:hidden' : 'opacity-100 block'}
-          `}
-        >
-          {label}
-        </span>
-      </Link>
-    </li>
-  );
+export default function EmployeeSidebar({ isMobileOpen, isDesktopCollapsed, closeMobile }) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <>
       {isMobileOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity" onClick={closeMobile}></div>
+        <div
+          onClick={closeMobile}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs md:hidden animate-[fadeIn_0.2s_ease-out]"
+        />
       )}
+
       <aside
-        className={`fixed inset-y-0 left-0 z-50 bg-[var(--bg-surface)] border-r border-[var(--border-light)] flex flex-col transition-all duration-300 ease-in-out
-          ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full'} 
-          md:relative md:translate-x-0 
-          ${isDesktopCollapsed ? 'md:w-20' : 'md:w-64'}
-        `}
+        className={`
+        fixed md:static inset-y-0 left-0 z-50
+        h-full flex flex-col justify-between 
+        bg-[var(--bg-surface)] border-r border-[var(--border-light)] 
+        p-4 select-none shrink-0 
+        transition-all duration-300 ease-in-out
+        ${isDesktopCollapsed ? 'md:w-20' : 'md:w-64'}
+        ${isMobileOpen ? 'w-64 translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}
       >
-        <div className="h-16 flex items-center justify-center border-b border-[var(--border-light)] shrink-0">
-          <span className="font-bold text-xl text-[var(--brand-primary)] truncate px-4">
-            {isDesktopCollapsed && !isMobileOpen ? 'CD' : 'ChronosDesk'}
-          </span>
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between px-1 py-2">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="p-2 rounded-xl bg-[var(--brand-primary)] text-[var(--text-inverse)] shadow-sm shrink-0">
+                <Boxes className="w-5 h-5" />
+              </div>
+              {(!isDesktopCollapsed || isMobileOpen) && (
+                <div className="truncate">
+                  <h1 className="text-base font-bold tracking-tight leading-none">AssetFlow</h1>
+                  <span className="text-[10px] font-mono font-medium text-[var(--text-muted)] tracking-wider uppercase">
+                    Employee Portal
+                  </span>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={closeMobile}
+              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] md:hidden transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <nav className="space-y-1.5">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  onClick={closeMobile}
+                  title={isDesktopCollapsed && !isMobileOpen ? item.name : undefined}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                      isDesktopCollapsed && !isMobileOpen ? 'md:justify-center md:px-0 px-3.5' : 'px-3.5'
+                    } ${
+                      isActive
+                        ? 'bg-[var(--brand-primary)] text-[var(--text-inverse)] shadow-sm font-semibold'
+                        : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)]'
+                    }`
+                  }
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {(!isDesktopCollapsed || isMobileOpen) && <span className="truncate">{item.name}</span>}
+                </NavLink>
+              );
+            })}
+          </nav>
         </div>
-        <nav className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
-          <ul className="space-y-1">
-            <NavItem to="/employee/home" label="Dashboard" iconPath="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            <NavItem to="/employee/my-assets" label="My Assets" iconPath="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-            <NavItem to="/employee/maintenance" label="Maintenance" iconPath="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
-            <NavItem to="/employee/booking" label="Booking" iconPath="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </ul>
-        </nav>
+
+        <div className="pt-4 border-t border-[var(--border-light)]">
+          <button
+            type="button"
+            onClick={() => {
+              handleLogout();
+              closeMobile();
+            }}
+            title={isDesktopCollapsed && !isMobileOpen ? 'Logout' : undefined}
+            className={`w-full flex items-center gap-3 py-2.5 rounded-xl text-xs font-medium text-[var(--status-danger)] hover:bg-rose-500/10 transition-colors ${
+              isDesktopCollapsed && !isMobileOpen ? 'md:justify-center md:px-0 px-3.5' : 'px-3.5'
+            }`}
+          >
+            <LogOut className="w-4 h-4 shrink-0" />
+            {(!isDesktopCollapsed || isMobileOpen) && <span>Logout</span>}
+          </button>
+        </div>
       </aside>
     </>
   );
-};
-
-export default EmployeeSidebar;
+}

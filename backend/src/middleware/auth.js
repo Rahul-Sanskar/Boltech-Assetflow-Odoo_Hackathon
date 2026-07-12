@@ -1,8 +1,7 @@
 const jwt = require("jsonwebtoken");
 const prisma = require("../config/db");
 const AppError = require("../utils/AppError");
-
-const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+const { getConfig } = require("../config/env");
 
 /**
  * Verifies Bearer JWT and attaches authenticated user context to req.user:
@@ -27,7 +26,7 @@ const authenticate = async (req, res, next) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = jwt.verify(token, getConfig().jwtSecret);
     } catch (err) {
       if (err.name === "TokenExpiredError") {
         return next(new AppError("Token has expired", 401));
