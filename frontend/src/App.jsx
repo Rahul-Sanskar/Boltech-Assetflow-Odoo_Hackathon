@@ -33,7 +33,20 @@ const AuditList = lazy(() => import('./pages/admin/audits/AuditList'));
 const ActivityPage = lazy(() => import('./pages/admin/activity/ActivityPage'));
 
 const ManagerHome = lazy(() => import('./pages/manager/ManagerHome'));
+const ManagerAssets = lazy(() => import('./pages/manager/assets/ManagerAssets'));
+const ManagerAllocations = lazy(() => import('./pages/manager/allocations/ManagerAllocations'));
+const ManagerTransfers = lazy(() => import('./pages/manager/transfers/ManagerTransfers'));
+const ManagerMaintenance = lazy(() => import('./pages/manager/maintenance/ManagerMaintenance'));
+const ManagerBookings = lazy(() => import('./pages/manager/bookings/ManagerBookings'));
+const ManagerAudits = lazy(() => import('./pages/manager/audits/ManagerAudits'));
+const ManagerReports = lazy(() => import('./pages/manager/reports/ManagerReports'));
+const ManagerNotifications = lazy(() => import('./pages/manager/notifications/ManagerNotifications'));
+
 const EmployeeHome = lazy(() => import('./pages/employee/EmployeeHome'));
+const MyAssets = lazy(() => import('./pages/employee/MyAssets'));
+const Bookings = lazy(() => import('./pages/employee/Bookings'));
+const Maintenance = lazy(() => import('./pages/employee/Maintenance'));
+const Notifications = lazy(() => import('./pages/employee/Notifications'));
 
 const RootRedirect = () => {
   const { user } = useAuth();
@@ -92,10 +105,22 @@ const App = () => {
 
         <Route path="/manager" element={<ManagerGuard><ManagerLayout /></ManagerGuard>}>
           <Route path="home" element={<ManagerHome />} />
+          <Route path="assets" element={<ManagerAssets />} />
+          <Route path="allocations" element={<ManagerAllocations />} />
+          <Route path="transfers" element={<ManagerTransfers />} />
+          <Route path="maintenance" element={<ManagerMaintenance />} />
+          <Route path="bookings" element={<ManagerBookings />} />
+          <Route path="audits" element={<ManagerAudits />} />
+          <Route path="reports" element={<ManagerReports />} />
+          <Route path="notifications" element={<ManagerNotifications />} />
         </Route>
 
         <Route path="/employee" element={<EmployeeGuard><EmployeeLayout /></EmployeeGuard>}>
           <Route path="home" element={<EmployeeHome />} />
+          <Route path="my-assets" element={<MyAssets />} />
+          <Route path="bookings" element={<Bookings />} />
+          <Route path="maintenance" element={<Maintenance />} />
+          <Route path="notifications" element={<Notifications />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
