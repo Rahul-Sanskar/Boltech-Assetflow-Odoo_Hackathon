@@ -13,9 +13,9 @@ const { idParam, createDepartmentBody, updateDepartmentBody } = require("../vali
 
 const router = express.Router();
 
-router.use(authenticate);
+router.get("/", getDepartments);
 
-router.get("/", authorizeRoles("ADMIN", "MANAGER", "EMPLOYEE"), getDepartments);
+router.use(authenticate);
 router.get("/:id", authorizeRoles("ADMIN", "MANAGER", "EMPLOYEE"), validate({ params: idParam }), getDepartmentById);
 router.post("/", authorizeRoles("ADMIN"), validate({ body: createDepartmentBody }), createDepartment);
 router.patch(
