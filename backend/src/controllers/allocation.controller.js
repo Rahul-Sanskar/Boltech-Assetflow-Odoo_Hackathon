@@ -9,7 +9,11 @@ exports.getAllocations = asyncHandler(async (req, res) => {
   const allocations = await prisma.allocation.findMany({
     where: allocationListScope(req.user),
     include: {
-      asset: { select: { id: true, name: true, assetTag: true } },
+      asset: {
+        include: {
+          category: { select: { id: true, name: true } }
+        }
+      },
       employee: { select: { id: true, name: true } }
     }
   });
