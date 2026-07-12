@@ -23,7 +23,13 @@ import MaintenanceList from "./pages/admin/maintenance/MaintenanceList";
 import AdminSettings from "./pages/admin/settings/AdminSettings";
 
 import ManagerHome from "./pages/manager/ManagerHome";
+
 import EmployeeHome from "./pages/employee/EmployeeHome";
+import MyAssets from "./pages/employee/MyAssets"
+import Bookings from "./pages/employee/Bookings"
+import Maintenance from "./pages/employee/Maintenance";
+import Notifications from "./pages/employee/Notifications"
+
 
 const RootRedirect = () => {
   const { user } = useAuth();
@@ -66,6 +72,11 @@ const App = () => {
 
       <Route path="/employee" element={<EmployeeGuard><EmployeeLayout /></EmployeeGuard>}>
         <Route path="home" element={<EmployeeHome />} />
+        <Route path="my-assets" element={<MyAssets/>} />
+        <Route path="bookings" element={<Bookings/>} />
+        <Route path="maintenance" element={<Maintenance/>} />
+        <Route path="notifications" element={<Notifications/>} />
+
       </Route>
     </Routes>
   );
