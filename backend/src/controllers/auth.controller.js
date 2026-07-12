@@ -1,106 +1,96 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const prisma = require("../config/db");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
+const { sendSuccess } = require("../utils/response");
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
-exports.signup = async (req, res) => {
-  try {
-    const { name, email, password, departmentId } = req.body;
+exports.signup = asyncHandler(async (req, res) => {
+  const { name, email, password, departmentId } = req.body;
 
-    if (!name || !email || !password || !departmentId) {
-      return res.status(400).json({ error: "All fields are required" });
-    }
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    throw new AppError("User already exists with this email", 400);
+  }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
+  const dept = await prisma.department.findUnique({
+    where: { id: Number(departmentId) }
+  });
+  if (!dept) {
+    throw new AppError("Department not found", 404);
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const result = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: "EMPLOYEE"
+      }
     });
 
-    if (existingUser) {
-      return res.status(400).json({ error: "User already exists with this email" });
-    }
-
-    const dept = await prisma.department.findUnique({
-      where: { id: Number(departmentId) }
+    const employee = await tx.employee.create({
+      data: {
+        name,
+        email,
+        departmentId: Number(departmentId),
+        userId: user.id
+      }
     });
 
-    if (!dept) {
-      return res.status(404).json({ error: "Department not found" });
-    }
+    return { user, employee };
+  });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+  const token = jwt.sign({ id: result.user.id, role: result.user.role }, JWT_SECRET, {
+    expiresIn: "24h"
+  });
 
-    const result = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-          role: "EMPLOYEE"
-        }
-      });
+  const { password: _, ...userWithoutPassword } = result.user;
 
-      const employee = await tx.employee.create({
-        data: {
-          name,
-          email,
-          departmentId: Number(departmentId),
-          userId: user.id
-        }
-      });
-
-      return { user, employee };
-    });
-
-    const token = jwt.sign({ id: result.user.id, role: result.user.role }, JWT_SECRET, {
-      expiresIn: "24h"
-    });
-
-    const { password: _, ...userWithoutPassword } = result.user;
-
-    res.status(201).json({
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Signup successful",
+    data: {
       user: userWithoutPassword,
       employee: result.employee,
       token
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    }
+  });
+});
+
+exports.login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { employee: true }
+  });
+
+  if (!user) {
+    throw new AppError("Invalid credentials", 401);
   }
-};
 
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    throw new AppError("Invalid credentials", 401);
+  }
 
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
-    }
+  const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
+    expiresIn: "24h"
+  });
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { employee: true }
-    });
+  const { password: _, ...userWithoutPassword } = user;
 
-    if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
-      expiresIn: "24h"
-    });
-
-    const { password: _, ...userWithoutPassword } = user;
-
-    res.json({
+  return sendSuccess(res, {
+    message: "Login successful",
+    data: {
       user: userWithoutPassword,
       token
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    }
+  });
+});
