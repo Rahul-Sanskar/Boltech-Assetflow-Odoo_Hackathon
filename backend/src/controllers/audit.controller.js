@@ -3,6 +3,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { sendSuccess } = require("../utils/response");
 const { auditListScope, isAdmin, isManager } = require("../utils/scope");
+const assetService = require("../services/asset.service");
 
 exports.getAuditCycles = asyncHandler(async (req, res) => {
   const cycles = await prisma.auditCycle.findMany({
@@ -96,19 +97,43 @@ exports.addAuditItem = asyncHandler(async (req, res) => {
 exports.updateAuditItem = asyncHandler(async (req, res) => {
   const { result, notes } = req.body;
 
+  const existing = await prisma.auditItem.findUnique({
+    where: { id: Number(req.params.itemId) }
+  });
+
+  if (!existing) {
+    throw new AppError("Audit item not found", 404);
+  }
+
   const item = await prisma.auditItem.update({
-    where: { id: Number(req.params.itemId) },
+    where: { id: existing.id },
     data: {
       result: result || undefined,
       notes: notes !== undefined ? notes : undefined
     }
   });
 
+  // Immediate Missing → Lost (also cascaded again on cycle close for consistency)
+  if (result && String(result).toLowerCase() === "missing") {
+    await assetService.markAssetLostFromAudit({
+      assetId: item.assetId,
+      actorUserId: req.user.id
+    });
+  }
+
   return sendSuccess(res, { message: "Audit item updated", data: item });
 });
 
 exports.updateAuditCycle = asyncHandler(async (req, res) => {
   const { status } = req.body;
+
+  if (status === "Closed") {
+    const cycle = await assetService.closeAuditCycle({
+      cycleId: Number(req.params.id),
+      actorUserId: req.user.id
+    });
+    return sendSuccess(res, { message: "Audit cycle updated", data: cycle });
+  }
 
   const cycle = await prisma.auditCycle.update({
     where: { id: Number(req.params.id) },
