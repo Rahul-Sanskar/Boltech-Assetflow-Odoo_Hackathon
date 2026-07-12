@@ -29,7 +29,7 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-[var(--bg-base)] overflow-hidden transition-colors duration-300">
       {/* Sidebar Component */}
       <AdminSidebar 
         isMobileOpen={isMobileOpen} 

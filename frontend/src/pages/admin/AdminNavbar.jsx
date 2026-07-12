@@ -1,33 +1,57 @@
+import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { Menu, Sun, Moon, Bell, LogOut } from 'lucide-react';
 
 const AdminNavbar = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
+  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
+
+  const toggleTheme = () => {
+    document.documentElement.classList.toggle('dark');
+    const newTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    localStorage.setItem('theme', newTheme);
+    setIsDark(newTheme === 'dark');
+  };
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-10 shrink-0">
-      <div className="flex items-center">
+    <header className="h-16 bg-[var(--bg-surface)]/80 backdrop-blur-xl border-b border-[var(--border-light)] flex items-center justify-between px-5 z-10 shrink-0 sticky top-0 transition-colors duration-300">
+      <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
-          className="p-2 rounded-md text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+          className="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)] transition-all duration-200 active:scale-90"
         >
-          {/* Hamburger Icon */}
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <Menu className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex flex-col items-end">
-          <span className="text-sm font-medium text-gray-700">{user?.name || 'Admin'}</span>
-          <span className="text-xs text-gray-500 capitalize">{user?.role}</span>
-        </div>
+      <div className="flex items-center gap-2">
         <button
-          onClick={logout}
-          className="text-sm bg-red-50 text-red-600 px-4 py-2 rounded-md hover:bg-red-100 transition-colors font-medium"
+          onClick={toggleTheme}
+          className="p-2.5 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)] transition-all duration-200 active:scale-90"
         >
-          Logout
+          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
+
+        <button className="relative p-2.5 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)] transition-all duration-200 active:scale-90">
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        </button>
+
+        <div className="w-px h-8 bg-[var(--border-light)] mx-1" />
+
+        <div className="flex items-center gap-3 pl-2">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-semibold text-[var(--text-main)]">{user?.name || 'Admin'}</p>
+            <p className="text-[11px] text-[var(--text-muted)] capitalize">{user?.role}</p>
+          </div>
+          <button
+            onClick={logout}
+            className="p-2.5 rounded-xl text-red-500 hover:bg-red-50 transition-all duration-200 active:scale-90"
+            title="Logout"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </header>
   );

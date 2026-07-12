@@ -1,90 +1,85 @@
 import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Package, Building2, Users, ClipboardList, Wrench, Settings } from 'lucide-react';
+
+const navItems = [
+  { to: '/admin/home', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/admin/assets', label: 'Assets', icon: Package },
+  { to: '/admin/departments', label: 'Departments', icon: Building2 },
+  { to: '/admin/employees', label: 'Employees', icon: Users },
+  { to: '/admin/allocations', label: 'Allocations', icon: ClipboardList },
+  { to: '/admin/maintenance', label: 'Maintenance', icon: Wrench },
+  { to: '/admin/settings', label: 'Settings', icon: Settings },
+];
 
 const AdminSidebar = ({ isMobileOpen, isDesktopCollapsed, closeMobile }) => {
   const location = useLocation();
-
-  // Helper to check active link
   const isActive = (path) => location.pathname === path;
-
-  // Reusable NavItem component to keep code clean
-  const NavItem = ({ to, iconPath, label }) => (
-    <li>
-      <Link
-        to={to}
-        onClick={closeMobile} // Closes mobile menu when link is clicked
-        className={`flex items-center px-4 py-3 rounded-lg transition-colors group relative
-          ${isActive(to) ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}
-        `}
-      >
-        <svg 
-          className={`w-6 h-6 flex-shrink-0 ${isActive(to) ? 'text-blue-700' : 'text-gray-500 group-hover:text-gray-900'}`} 
-          fill="none" viewBox="0 0 24 24" stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={iconPath} />
-        </svg>
-
-        {/* Label - fades out when collapsed on desktop */}
-        <span 
-          className={`ml-3 whitespace-nowrap transition-opacity duration-200
-            ${isDesktopCollapsed && !isMobileOpen ? 'opacity-0 md:hidden' : 'opacity-100 block'}
-          `}
-        >
-          {label}
-        </span>
-      </Link>
-    </li>
-  );
 
   return (
     <>
-      {/* Mobile Backdrop - only visible on small screens when sidebar is open */}
       {isMobileOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity"
-          onClick={closeMobile}
-        ></div>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden transition-opacity" onClick={closeMobile} />
       )}
 
-      {/* Sidebar Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out
-          ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full'} 
-          md:relative md:translate-x-0 
-          ${isDesktopCollapsed ? 'md:w-20' : 'md:w-64'}
+        className={`fixed inset-y-0 left-0 z-50 bg-[var(--bg-surface)] border-r border-[var(--border-light)] flex flex-col transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+          ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full'}
+          md:relative md:translate-x-0
+          ${isDesktopCollapsed ? 'md:w-[72px]' : 'md:w-64'}
         `}
       >
-        {/* Branding Header */}
-        <div className="h-16 flex items-center justify-center border-b border-gray-200 shrink-0">
-          <span className="font-bold text-xl text-blue-700 truncate px-4">
-            {isDesktopCollapsed && !isMobileOpen ? 'AD' : 'ChronosDesk'}
+        <div className="h-16 flex items-center gap-3 border-b border-[var(--border-light)] shrink-0 px-5 overflow-hidden">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--brand-primary)] to-purple-400 flex items-center justify-center shrink-0">
+            <span className="text-white font-bold text-sm">AF</span>
+          </div>
+          <span className={`font-bold text-lg text-[var(--text-main)] whitespace-nowrap transition-all duration-300 ${isDesktopCollapsed && !isMobileOpen ? 'opacity-0 w-0' : 'opacity-100'}`}>
+            AssetFlow
           </span>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
+        <nav className="flex-1 overflow-y-auto py-4 px-3">
           <ul className="space-y-1">
-            <NavItem 
-              to="/admin" 
-              label="Dashboard" 
-              iconPath="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" 
-            />
-            <NavItem 
-              to="/admin/departments" 
-              label="Departments" 
-              iconPath="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" 
-            />
-            <NavItem 
-              to="/admin/users" 
-              label="Users & Employees" 
-              iconPath="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" 
-            />
-            <NavItem 
-              to="/admin/settings" 
-              label="Settings" 
-              iconPath="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" 
-            />
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li key={item.to}>
+                  <Link
+                    to={item.to}
+                    onClick={closeMobile}
+                    className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 overflow-hidden
+                      ${isActive(item.to)
+                        ? 'bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] font-semibold'
+                        : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)]'
+                      }
+                    `}
+                  >
+                    {isActive(item.to) && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--brand-primary)] animate-[scaleY_0.2s_ease-out]" />
+                    )}
+                    <span className={`shrink-0 transition-transform duration-200 group-hover:scale-110 ${isActive(item.to) ? 'text-[var(--brand-primary)]' : ''}`}>
+                      <Icon className="w-5 h-5" />
+                    </span>
+                    <span className={`whitespace-nowrap text-sm transition-all duration-300 ${isDesktopCollapsed && !isMobileOpen ? 'opacity-0 w-0' : 'opacity-100'}`}>
+                      {item.label}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
+
+        <div className="p-3 border-t border-[var(--border-light)]">
+          <div className={`flex items-center gap-3 px-3 py-2 rounded-xl bg-[var(--bg-surface-hover)] transition-all duration-300 ${isDesktopCollapsed && !isMobileOpen ? 'justify-center' : ''}`}>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--brand-primary)] to-purple-400 flex items-center justify-center shrink-0">
+              <span className="text-white text-xs font-bold">A</span>
+            </div>
+            <div className={`transition-all duration-300 overflow-hidden ${isDesktopCollapsed && !isMobileOpen ? 'w-0 opacity-0' : 'opacity-100'}`}>
+              <p className="text-xs font-semibold text-[var(--text-main)] truncate">Admin</p>
+              <p className="text-[10px] text-[var(--text-muted)]">Administrator</p>
+            </div>
+          </div>
+        </div>
       </aside>
     </>
   );
