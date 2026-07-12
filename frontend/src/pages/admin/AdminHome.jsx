@@ -1,111 +1,111 @@
 import React, { useState, useEffect } from 'react';
 import API from '../../api/API.js';
+import { useAuth } from '../../context/AuthContext';
+import StatCard from '../../components/ui/StatCard';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Badge from '../../components/ui/Badge';
+import { Box, CheckCircle, Clipboard, Wrench, Users, Building, AlertCircle } from 'lucide-react';
 
 const AdminHome = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     API.get('/dashboard')
-      .then((res) => {
-        const data = res.data.data || res.data;
-        setStats(data);
-      })
+      .then((res) => setStats(res.data.data || res.data))
       .catch(() => setStats(null))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner />;
 
-  const cards = stats?.stats ? [
-    { label: 'Total Assets', value: stats.stats.totalAssets, color: 'bg-blue-50 text-blue-700 border-blue-200' },
-    { label: 'Available', value: stats.stats.availableAssets, color: 'bg-green-50 text-green-700 border-green-200' },
-    { label: 'Allocated', value: stats.stats.allocatedAssets, color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-    { label: 'Under Maintenance', value: stats.stats.underMaintenance, color: 'bg-red-50 text-red-700 border-red-200' },
-    { label: 'Total Employees', value: stats.stats.totalEmployees, color: 'bg-purple-50 text-purple-700 border-purple-200' },
-    { label: 'Departments', value: stats.stats.totalDepartments, color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-    { label: 'Pending Maintenance', value: stats.stats.pendingMaintenance, color: 'bg-orange-50 text-orange-700 border-orange-200' },
-    { label: 'Active Bookings', value: stats.stats.activeBookings, color: 'bg-teal-50 text-teal-700 border-teal-200' },
+  const statCards = stats?.stats ? [
+    { label: 'Total Assets', value: stats.stats.totalAssets, color: 'blue', icon: <Box className="w-5 h-5" /> },
+    { label: 'Available', value: stats.stats.availableAssets, color: 'green', icon: <CheckCircle className="w-5 h-5" /> },
+    { label: 'Allocated', value: stats.stats.allocatedAssets, color: 'amber', icon: <Clipboard className="w-5 h-5" /> },
+    { label: 'Under Maintenance', value: stats.stats.underMaintenance, color: 'red', icon: <Wrench className="w-5 h-5" /> },
+    { label: 'Employees', value: stats.stats.totalEmployees, color: 'purple', icon: <Users className="w-5 h-5" /> },
+    { label: 'Departments', value: stats.stats.totalDepartments, color: 'indigo', icon: <Building className="w-5 h-5" /> },
+    { label: 'Pending Requests', value: stats.stats.pendingMaintenance, color: 'orange', icon: <Wrench className="w-5 h-5" /> },
+    { label: 'Active Bookings', value: stats.stats.activeBookings, color: 'teal', icon: <Clipboard className="w-5 h-5" /> },
   ] : [];
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {cards.map((card) => (
-          <div key={card.label} className={`p-5 rounded-xl border ${card.color}`}>
-            <p className="text-sm font-medium opacity-80">{card.label}</p>
-            <p className="text-3xl font-bold mt-1">{card.value}</p>
+    <div className="space-y-8 animate-[fadeIn_0.4s_ease-out]">
+      <div>
+        <h1 className="text-2xl font-bold text-[var(--text-main)] tracking-tight">
+          Welcome back, {user?.name?.split(' ')[0] || 'Admin'}
+        </h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">Here's what's happening with your assets today.</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((card, i) => (
+          <div key={card.label} style={{ animationDelay: `${i * 60}ms` }} className="animate-[slideUp_0.5s_ease-out_both]">
+            <StatCard {...card} />
           </div>
         ))}
       </div>
 
-      {stats?.recentAllocations?.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Recent Allocations</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-500 border-b">
-                  <th className="pb-2 font-medium">Asset</th>
-                  <th className="pb-2 font-medium">Tag</th>
-                  <th className="pb-2 font-medium">Employee</th>
-                  <th className="pb-2 font-medium">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.recentAllocations.map((a, i) => (
-                  <tr key={i} className="border-b last:border-0">
-                    <td className="py-2">{a.asset?.name}</td>
-                    <td className="py-2 text-gray-500">{a.asset?.assetTag}</td>
-                    <td className="py-2">{a.employee?.name}</td>
-                    <td className="py-2 text-gray-500">{new Date(a.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-2xl border border-[var(--border-light)] bg-[var(--bg-surface)] overflow-hidden animate-[slideUp_0.5s_ease-out_0.3s_both]">
+          <div className="px-6 py-4 border-b border-[var(--border-light)] flex items-center justify-between">
+            <h2 className="text-base font-semibold text-[var(--text-main)]">Recent Allocations</h2>
+            <Badge variant="info">{stats?.recentAllocations?.length || 0} total</Badge>
+          </div>
+          <div className="divide-y divide-[var(--border-light)]">
+            {stats?.recentAllocations?.length > 0 ? (
+              stats.recentAllocations.slice(0, 5).map((a, i) => (
+                <div key={i} className="px-6 py-3.5 flex items-center justify-between hover:bg-[var(--bg-surface-hover)] transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                      <Box className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-[var(--text-main)]">{a.asset?.name}</p>
+                      <p className="text-xs text-[var(--text-muted)]">{a.asset?.assetTag}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-[var(--text-main)]">{a.employee?.name}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{new Date(a.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="px-6 py-8 text-center text-sm text-[var(--text-muted)]">No recent allocations</div>
+            )}
           </div>
         </div>
-      )}
 
-      {stats?.recentMaintenance?.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Recent Maintenance Requests</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-500 border-b">
-                  <th className="pb-2 font-medium">Asset</th>
-                  <th className="pb-2 font-medium">Requested By</th>
-                  <th className="pb-2 font-medium">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.recentMaintenance.map((m, i) => (
-                  <tr key={i} className="border-b last:border-0">
-                    <td className="py-2">{m.asset?.name}</td>
-                    <td className="py-2">{m.requestedBy?.name}</td>
-                    <td className="py-2 text-gray-500">{new Date(m.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="rounded-2xl border border-[var(--border-light)] bg-[var(--bg-surface)] overflow-hidden animate-[slideUp_0.5s_ease-out_0.4s_both]">
+          <div className="px-6 py-4 border-b border-[var(--border-light)] flex items-center justify-between">
+            <h2 className="text-base font-semibold text-[var(--text-main)]">Maintenance Requests</h2>
+            <Badge variant="warning">{stats?.recentMaintenance?.length || 0} pending</Badge>
+          </div>
+          <div className="divide-y divide-[var(--border-light)]">
+            {stats?.recentMaintenance?.length > 0 ? (
+              stats.recentMaintenance.slice(0, 5).map((m, i) => (
+                <div key={i} className="px-6 py-3.5 flex items-center justify-between hover:bg-[var(--bg-surface-hover)] transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                      <Wrench className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-[var(--text-main)]">{m.asset?.name}</p>
+                      <p className="text-xs text-[var(--text-muted)]">Requested by {m.requestedBy?.name}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)]">{new Date(m.createdAt).toLocaleDateString()}</p>
+                </div>
+              ))
+            ) : (
+              <div className="px-6 py-8 text-center text-sm text-[var(--text-muted)]">No pending maintenance</div>
+            )}
           </div>
         </div>
-      )}
-
-      {!stats && (
-        <div className="text-center text-gray-500 py-12">
-          <p>Unable to load dashboard data.</p>
-        </div>
-      )}
+      </div>
     </div>
   );
 };
